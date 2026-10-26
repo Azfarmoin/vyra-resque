@@ -1,5 +1,4 @@
 {
-<<<<<<< HEAD
   "name": "vyra",
   "version": "0.1.0",
   "private": true,
@@ -34,10 +33,13 @@
     "test:shelters-sql": "node scripts/test-shelter-sql.mjs"
   },
   "dependencies": {
+    "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/supabase-js": "^2.43.4",
+    "clsx": "^2.1.1",
     "geotiff": "^3.0.5",
     "idb": "^8.0.4",
     "leaflet": "^1.9.4",
+    "lucide-react": "^0.379.0",
     "next": "14.2.5",
     "pdfkit": "^0.15.2",
     "proj4": "^2.22.0",
@@ -46,7 +48,8 @@
     "react-dom": "^18.3.1",
     "react-leaflet": "^4.2.1",
     "web-push": "^3.6.7",
-    "zod": "^3.24.1"
+    "zod": "^3.24.1",
+    "tailwind-merge": "^2.3.0"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.11",
@@ -58,58 +61,16 @@
     "@types/react": "^18.3.2",
     "@types/react-dom": "^18.3.0",
     "@types/web-push": "^3.6.3",
-=======
-  "name": "resqnet",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint",
-    "test": "tsx --test tests/triage.test.ts tests/api.test.ts",
-    "dev:demo": "cross-env VYRA_DATA_MODE=demo next dev"
-  },
-  "dependencies": {
-    "@supabase/auth-helpers-nextjs": "^0.10.0",
-    "@supabase/supabase-js": "^2.43.4",
-    "clsx": "^2.1.1",
-    "leaflet": "^1.9.4",
-    "lucide-react": "^0.379.0",
-    "next": "14.2.5",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-leaflet": "^4.2.1",
-    "tailwind-merge": "^2.3.0",
-    "zod": "^3.24.1"
-    "tailwind-merge": "^2.3.0"
-  },
-  "devDependencies": {
-    "@types/leaflet": "^1.9.12",
-    "@types/node": "^20.12.12",
-    "@types/react": "^18.3.2",
-    "@types/react-dom": "^18.3.0",
->>>>>>> a060b8ffeee783089b8a5367755aa94cb1169895
     "autoprefixer": "^10.4.19",
     "cross-env": "^7.0.3",
     "eslint": "^8.57.0",
     "eslint-config-next": "14.2.5",
-<<<<<<< HEAD
     "fake-indexeddb": "^6.2.6",
     "pg": "^8.23.1",
     "postcss": "^8.4.38",
-    "tailwindcss": "^3.4.3",
-    "tsx": "^4.19.2",
-=======
-    "postcss": "^8.4.38",
-    "tailwindcss": "^3.4.3",
-    "tsx": "^4.19.2",
-    "eslint": "^8.57.0",
-    "eslint-config-next": "14.2.5",
-    "postcss": "^8.4.38",
     "supabase": "^2.121.0",
     "tailwindcss": "^3.4.3",
->>>>>>> a060b8ffeee783089b8a5367755aa94cb1169895
+    "tsx": "^4.19.2",
     "typescript": "^5.4.5"
   }
 }
