@@ -1,0 +1,21 @@
+# Runs the early-warning monitor on a schedule, independent of any browser.
+# Needs repository secrets: VYRA_URL (e.g. https://your-app.example.com) and CRON_SECRET (same value as the server's).
+# GitHub may delay scheduled runs by several minutes; the shortest interval it supports is 5 minutes.
+name: alerts-monitor
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch: {}
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call the monitoring endpoint
+        env:
+          VYRA_URL: ${{ secrets.VYRA_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          code=$(curl -sS -o out.json -w '%{http_code}' --max-time 90 -X POST -H "Authorization: Bearer ${CRON_SECRET}" "${VYRA_URL%/}/api/alerts/cron")
+          echo "HTTP ${code}"; cat out.json; echo
+          test "${code}" = "200"

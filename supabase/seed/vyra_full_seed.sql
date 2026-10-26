@@ -1,0 +1,487 @@
+-- =============================================================================
+-- VYRA - demo seed, 30 rows per table, for a cloud Supabase project (SIMULATED DATA ONLY)
+-- Vulnerability, Yielded Response & Assistance
+--
+-- Fictional urban-flooding scenario in Karachi. Contents (30 of each):
+--   30 sign-in accounts (1 administrator, 9 responders, 20 citizens) - auth users + profiles
+--   30 emergency cases across 10 areas (6 pending, 4 investigating, 8 assigned, 10 resolved, 2 cancelled)
+--   30 rescue teams, 30 supply records, 30 shelters
+--   30 route hazards, 30 blocked roads
+--   30 missions (8 live, 16 completed, 6 cancelled) and 30 supply allocations
+--   plus 77 audit-history events (derived from the 30 cases)
+--
+-- HOW TO RUN (Supabase > SQL Editor > New query, one file per run, in this order)
+--   1. supabase/vyra_complete_schema.sql
+--   2. supabase/migrations/001_stage7_8_dispatch_offline.sql
+--   3. this file
+--
+-- SAFE TO RE-RUN: removes the previous seed rows first (matched by their fixed ids / names), including
+-- the older 80-case seed, then inserts these again with fresh timestamps.
+-- Reports and accounts created by real users are untouched.
+--
+-- SECURITY: every account below gets the password on the "seed_password" line. Change it BEFORE
+-- running if this project will be reachable by anyone else.
+-- =============================================================================
+
+CREATE EXTENSION IF NOT EXISTS pgcrypto WITH SCHEMA extensions;
+
+
+-- -----------------------------------------------------------------------------
+-- 1. Accounts: auth users (email + password sign-in) and their profiles
+-- -----------------------------------------------------------------------------
+DO $$
+DECLARE
+  seed_password TEXT := 'VYRA-demo-1';   -- <<< CHANGE THIS before running on a shared project
+  a RECORD;
+  c RECORD;
+BEGIN
+  FOR a IN
+    SELECT * FROM (VALUES
+      ('90000000-0000-4000-8000-000000000001'::UUID, 'admin@demo.vyra', 'Amina Farooqui', 'admin'),
+      ('90000000-0000-4000-8000-000000000002'::UUID, 'dispatcher@demo.vyra', 'Hamza Siddiqui', 'responder'),
+      ('90000000-0000-4000-8000-000000000003'::UUID, 'fieldlead@demo.vyra', 'Sana Qureshi', 'responder'),
+      ('90000000-0000-4000-8000-000000000004'::UUID, 'logistics@demo.vyra', 'Waleed Khokhar', 'responder'),
+      ('90000000-0000-4000-8000-000000000005'::UUID, 'citizen@demo.vyra', 'Bilal Ahmed', 'citizen'),
+      ('90000000-0000-4000-8000-000000000006'::UUID, 'neighbour@demo.vyra', 'Nida Hussain', 'citizen'),
+      ('90000000-0000-4000-8000-000000000007'::UUID, 'responder4@demo.vyra', 'Talha Mansoor', 'responder'),
+      ('90000000-0000-4000-8000-000000000008'::UUID, 'responder5@demo.vyra', 'Rabia Anjum', 'responder'),
+      ('90000000-0000-4000-8000-000000000009'::UUID, 'responder6@demo.vyra', 'Salman Butt', 'responder'),
+      ('90000000-0000-4000-8000-000000000010'::UUID, 'responder7@demo.vyra', 'Mehwish Kamal', 'responder'),
+      ('90000000-0000-4000-8000-000000000011'::UUID, 'responder8@demo.vyra', 'Arsalan Memon', 'responder'),
+      ('90000000-0000-4000-8000-000000000012'::UUID, 'responder9@demo.vyra', 'Hira Javed', 'responder'),
+      ('90000000-0000-4000-8000-000000000013'::UUID, 'citizen3@demo.vyra', 'Usman Ghani', 'citizen'),
+      ('90000000-0000-4000-8000-000000000014'::UUID, 'citizen4@demo.vyra', 'Farah Naeem', 'citizen'),
+      ('90000000-0000-4000-8000-000000000015'::UUID, 'citizen5@demo.vyra', 'Zain Abbasi', 'citizen'),
+      ('90000000-0000-4000-8000-000000000016'::UUID, 'citizen6@demo.vyra', 'Maryam Siddiqui', 'citizen'),
+      ('90000000-0000-4000-8000-000000000017'::UUID, 'citizen7@demo.vyra', 'Hassan Raza', 'citizen'),
+      ('90000000-0000-4000-8000-000000000018'::UUID, 'citizen8@demo.vyra', 'Ayesha Tariq', 'citizen'),
+      ('90000000-0000-4000-8000-000000000019'::UUID, 'citizen9@demo.vyra', 'Daniyal Shaikh', 'citizen'),
+      ('90000000-0000-4000-8000-000000000020'::UUID, 'citizen10@demo.vyra', 'Sidra Bashir', 'citizen'),
+      ('90000000-0000-4000-8000-000000000021'::UUID, 'citizen11@demo.vyra', 'Owais Pirzada', 'citizen'),
+      ('90000000-0000-4000-8000-000000000022'::UUID, 'citizen12@demo.vyra', 'Komal Rajput', 'citizen'),
+      ('90000000-0000-4000-8000-000000000023'::UUID, 'citizen13@demo.vyra', 'Adnan Lodhi', 'citizen'),
+      ('90000000-0000-4000-8000-000000000024'::UUID, 'citizen14@demo.vyra', 'Iqra Fatima', 'citizen'),
+      ('90000000-0000-4000-8000-000000000025'::UUID, 'citizen15@demo.vyra', 'Fahad Mughal', 'citizen'),
+      ('90000000-0000-4000-8000-000000000026'::UUID, 'citizen16@demo.vyra', 'Noor Jahan', 'citizen'),
+      ('90000000-0000-4000-8000-000000000027'::UUID, 'citizen17@demo.vyra', 'Shahzaib Khan', 'citizen'),
+      ('90000000-0000-4000-8000-000000000028'::UUID, 'citizen18@demo.vyra', 'Laiba Zubair', 'citizen'),
+      ('90000000-0000-4000-8000-000000000029'::UUID, 'citizen19@demo.vyra', 'Murtaza Ali', 'citizen'),
+      ('90000000-0000-4000-8000-000000000030'::UUID, 'citizen20@demo.vyra', 'Anam Sheikh', 'citizen')
+    ) AS t(id, email, full_name, role)
+  LOOP
+    -- Re-running replaces the account (and resets its password).
+    UPDATE public.dispatches SET assigned_by = NULL WHERE assigned_by = a.id;
+    DELETE FROM public.profiles WHERE id = a.id OR email = a.email;
+    DELETE FROM auth.users WHERE id = a.id OR email = a.email;   -- identities go with it
+
+    INSERT INTO auth.users (
+      instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+      raw_app_meta_data, raw_user_meta_data, created_at, updated_at
+    ) VALUES (
+      '00000000-0000-0000-0000-000000000000', a.id, 'authenticated', 'authenticated', a.email,
+      crypt(seed_password, gen_salt('bf')), NOW(),
+      '{"provider":"email","providers":["email"]}'::JSONB,
+      jsonb_build_object('full_name', a.full_name, 'email_verified', true),
+      NOW(), NOW()
+    );
+
+    -- GoTrue fails to sign in a user whose token columns are NULL; set whichever exist to ''.
+    FOR c IN
+      SELECT column_name FROM information_schema.columns
+      WHERE table_schema = 'auth' AND table_name = 'users'
+        AND column_name IN ('confirmation_token', 'recovery_token', 'email_change_token_new', 'email_change',
+                            'email_change_token_current', 'phone_change', 'phone_change_token', 'reauthentication_token')
+    LOOP
+      EXECUTE format('UPDATE auth.users SET %I = COALESCE(%I, '''') WHERE id = $1', c.column_name, c.column_name) USING a.id;
+    END LOOP;
+
+    INSERT INTO auth.identities (id, user_id, provider_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
+    VALUES (
+      gen_random_uuid(), a.id, a.id::TEXT,
+      jsonb_build_object('sub', a.id::TEXT, 'email', a.email, 'email_verified', true, 'phone_verified', false),
+      'email', NOW(), NOW(), NOW()
+    );
+
+    INSERT INTO public.profiles (id, email, full_name, role)
+    VALUES (a.id, a.email, a.full_name, a.role::user_role)
+    -- The sign-up trigger (migration 011) already created a citizen profile for this auth user; set the intended role.
+    ON CONFLICT (id) DO UPDATE SET email = EXCLUDED.email, full_name = EXCLUDED.full_name, role = EXCLUDED.role;
+  END LOOP;
+END $$;
+
+
+-- -----------------------------------------------------------------------------
+-- 2. Remove the previous seed rows (this file is safe to re-run)
+-- -----------------------------------------------------------------------------
+DELETE FROM dispatches WHERE id::TEXT LIKE '60000000-%';
+DELETE FROM emergency_reports WHERE client_id LIKE 'demo-seed-%' OR id::TEXT LIKE '00000000-0000-4000-8000-%';
+DELETE FROM resources WHERE id::TEXT LIKE '40000000-%';
+DELETE FROM rescue_teams WHERE id::TEXT LIKE '20000000-%' OR team_name IN ('Boat Team Alpha', 'Boat Team Bravo', 'Boat Team Charlie', 'Boat Team Delta', 'Medical Unit 3', 'Medical Unit 5', 'Medical Unit 8', 'Search & Rescue Bravo', 'Search & Rescue Echo', 'Search & Rescue Foxtrot', 'Fire Response Kilo', 'Evacuation Bus Crew 2', 'Evacuation Truck Crew 4', 'Logistics Truck 7', 'Logistics Truck 9', 'Community Volunteers Orangi');
+DELETE FROM shelters WHERE id::TEXT LIKE '30000000-%' OR name IN ('Govt. Boys School Shelter (Lyari)', 'Community Hall Gulshan', 'Malir Relief Camp', 'Korangi Sports Complex', 'Landhi Girls College Shelter', 'Keamari Port Trust Hall', 'Orangi Community Centre', 'North Nazimabad Girls School', 'Saddar Church Hall', 'Clifton Youth Centre', 'Rumoured shelter at mosque');
+DELETE FROM route_hazards WHERE id::TEXT LIKE '50000000-%';
+DELETE FROM blocked_roads WHERE id::TEXT LIKE '10000000-%' OR description IN ('Lyari Expressway underpass flooded', 'Korangi Road submerged near Qayyumabad', 'Debris on Malir River bridge approach', 'Landhi 89 stop road under 1 m of water', 'Orangi nullah bridge closed, structure cracked', 'Fallen trees on Sharae Faisal service lane', 'Keamari Port Road waterlogged', 'Gulshan Block 7 underpass flooded', 'Possible block on University Road');
+
+
+-- -----------------------------------------------------------------------------
+-- 3. Emergency cases (30) and their audit history (77 events)
+-- -----------------------------------------------------------------------------
+INSERT INTO emergency_reports (id, client_id, location_lat, location_lng, location_address, location_source, location_accuracy_m, area, people_count, immediate_danger, dangers, danger_details, injury_severity, injury_count, injury_details, medical_need_types, medical_needs, can_evacuate, vulnerabilities, contact_info, status, verified, priority_score, resolved_at, created_at, updated_at) VALUES
+  ('00000000-0000-4000-8000-000000000001', 'demo-seed-1', 24.9488, 66.9875, 'Orangi town, near the nullah bridge', 'manual', NULL, 'Orangi', NULL, false, '{}', 'Please help, water everywhere', 'unknown', NULL, NULL, '{}', NULL, 'unknown', '{}', NULL, 'pending', false, 15, NULL, NOW() - INTERVAL '5 minutes', NOW() - INTERVAL '5 minutes'),
+  ('00000000-0000-4000-8000-000000000002', 'demo-seed-2', 24.8212, 66.9781, 'Keamari, near the fish harbour wall', 'gps', 25, 'Keamari', 3, true, ARRAY['building_collapse']::TEXT[], 'Part of the wall collapsed, one man is unconscious under debris.', 'critical', 1, 'Unconscious, bleeding from the head', '{}', NULL, 'unknown', '{}', NULL, 'pending', false, 105, NULL, NOW() - INTERVAL '8 minutes', NOW() - INTERVAL '8 minutes'),
+  ('00000000-0000-4000-8000-000000000003', 'demo-seed-3', 24.88101, 67.19009, 'Malir: Saudabad, near the bridge', 'manual', NULL, 'Malir', 10, true, ARRAY['fire']::TEXT[], 'Fire in a shop below the flats, smoke on the stairs.', 'minor', 2, NULL, '{}', NULL, 'unknown', '{}', NULL, 'assigned', true, 67, NULL, NOW() - INTERVAL '18 minutes', NOW() - INTERVAL '18 minutes'),
+  ('00000000-0000-4000-8000-000000000004', 'demo-seed-4', 24.8335, 67.1352, 'Korangi sector 5, near the school', 'manual', NULL, 'Korangi', 1, false, ARRAY['stranded']::TEXT[], NULL, 'none', NULL, NULL, ARRAY['dialysis']::TEXT[], 'Missed dialysis yesterday, roads to the hospital are flooded.', 'no', ARRAY['elderly']::TEXT[], 'Simulated - R. Khan · +92 300 0000002', 'pending', false, 62, NULL, NOW() - INTERVAL '20 minutes', NOW() - INTERVAL '20 minutes'),
+  ('00000000-0000-4000-8000-000000000005', 'demo-seed-5', 24.8702, 66.9912, 'Behind Chakiwara market, blue gate', 'gps', 12, 'Lyari', 6, true, ARRAY['rising_water', 'trapped']::TEXT[], 'Water at chest level on the ground floor. Family is on the roof and cannot get out.', 'none', NULL, NULL, '{}', NULL, 'no', ARRAY['elderly', 'infants_children']::TEXT[], 'Simulated - A. Baloch · +92 300 0000001', 'investigating', true, 106, NULL, NOW() - INTERVAL '35 minutes', NOW() - INTERVAL '35 minutes'),
+  ('00000000-0000-4000-8000-000000000006', 'demo-seed-6', 24.88417, 67.20488, 'Malir: Jafar-e-Tayyar, street 12', 'gps', 51, 'Malir', 5, true, ARRAY['building_collapse']::TEXT[], 'Roof of a neighbouring house has fallen in. People may be inside.', 'serious', 1, 'Leg injury, cannot stand', '{}', NULL, 'no', '{}', 'Simulated - I. Soomro · +92 300 0001049', 'investigating', true, 107, NULL, NOW() - INTERVAL '49 minutes', NOW() - INTERVAL '49 minutes'),
+  ('00000000-0000-4000-8000-000000000007', 'demo-seed-7', 24.88087, 67.2055, 'Malir: Malir Halt, by the railway line', 'gps', 14, 'Malir', 3, true, ARRAY['rising_water']::TEXT[], 'Water is coming into the house, now above the knees.', 'none', NULL, NULL, '{}', NULL, 'unknown', '{}', 'Simulated - B. Jamali · +92 300 0001063', 'investigating', true, 49, NULL, NOW() - INTERVAL '49 minutes', NOW() - INTERVAL '49 minutes'),
+  ('00000000-0000-4000-8000-000000000008', 'demo-seed-8', 24.8581, 67.0205, 'Saddar, Empress market side road', 'gps', 8, 'Saddar', 2, true, ARRAY['electrocution']::TEXT[], 'Electric pole fallen into flood water next to the house.', 'minor', 1, NULL, '{}', NULL, 'yes', '{}', NULL, 'assigned', true, 51, NULL, NOW() - INTERVAL '50 minutes', NOW() - INTERVAL '50 minutes'),
+  ('00000000-0000-4000-8000-000000000009', 'demo-seed-9', 24.815, 67.0322, 'Clifton block 2', 'manual', NULL, 'Clifton', 4, false, ARRAY['none']::TEXT[], NULL, 'none', NULL, NULL, ARRAY['essential_medication']::TEXT[], 'Blood pressure medication will run out tomorrow.', 'yes', ARRAY['elderly']::TEXT[], NULL, 'pending', true, 32, NULL, NOW() - INTERVAL '70 minutes', NOW() - INTERVAL '70 minutes'),
+  ('00000000-0000-4000-8000-000000000010', 'demo-seed-10', 24.95194, 67.00136, 'Orangi: Pakistan Bazaar, upstairs rooms', 'manual', NULL, 'Orangi', 5, true, ARRAY['rising_water']::TEXT[], 'Water is coming into the house, now above the knees.', 'none', NULL, NULL, '{}', NULL, 'unknown', '{}', NULL, 'assigned', true, 59, NULL, NOW() - INTERVAL '94 minutes', NOW() - INTERVAL '94 minutes'),
+  ('00000000-0000-4000-8000-000000000011', 'demo-seed-11', 24.9215, 67.0981, 'Gulshan block 13, apartment block C', 'gps', 40, 'Gulshan-e-Iqbal', 40, false, ARRAY['no_food_water', 'no_shelter']::TEXT[], 'Power out for two days, no clean water for the building.', 'none', NULL, NULL, ARRAY['insulin', 'chronic_illness']::TEXT[], NULL, 'yes', ARRAY['elderly', 'infants_children']::TEXT[], 'Simulated - Building committee · +92 300 0000003', 'pending', true, 76, NULL, NOW() - INTERVAL '95 minutes', NOW() - INTERVAL '95 minutes'),
+  ('00000000-0000-4000-8000-000000000012', 'demo-seed-12', 24.92564, 67.09532, 'Gulshan-e-Iqbal: Block 3, behind the petrol pump', 'manual', NULL, 'Gulshan-e-Iqbal', 2, false, ARRAY['none']::TEXT[], 'We are safe at home. Please check on us when someone is free.', 'none', NULL, NULL, '{}', NULL, 'yes', '{}', NULL, 'assigned', true, 17, NULL, NOW() - INTERVAL '126 minutes', NOW() - INTERVAL '126 minutes'),
+  ('00000000-0000-4000-8000-000000000013', 'demo-seed-13', 24.896, 67.201, 'Malir, near the river embankment', 'gps', 15, 'Malir', 12, true, ARRAY['rising_water']::TEXT[], NULL, 'serious', 2, 'Two people with fractures from a fall', ARRAY['pregnancy_labor']::TEXT[], 'One woman is in labour.', 'no', ARRAY['pregnant', 'infants_children']::TEXT[], 'Simulated - Z. Ahmed · +92 300 0000004', 'pending', false, 137, NULL, NOW() - INTERVAL '140 minutes', NOW() - INTERVAL '140 minutes'),
+  ('00000000-0000-4000-8000-000000000014', 'demo-seed-14', 24.95183, 67.00414, 'Orangi: Sector 11, near the nullah', 'manual', NULL, 'Orangi', 1, false, ARRAY['none']::TEXT[], 'We are safe at home. Please check on us when someone is free.', 'none', NULL, NULL, '{}', NULL, 'yes', '{}', 'Simulated - K. Sheikh · +92 300 0001028', 'assigned', true, 17, NULL, NOW() - INTERVAL '156 minutes', NOW() - INTERVAL '156 minutes'),
+  ('00000000-0000-4000-8000-000000000015', 'demo-seed-15', 24.83073, 67.11619, 'Korangi: Qayyumabad, street 9', 'manual', NULL, 'Korangi', 8, true, ARRAY['fire']::TEXT[], 'Fire in a shop below the flats, smoke on the stairs.', 'minor', 2, NULL, '{}', NULL, 'unknown', '{}', NULL, 'assigned', true, 76, NULL, NOW() - INTERVAL '197 minutes', NOW() - INTERVAL '197 minutes'),
+  ('00000000-0000-4000-8000-000000000016', 'demo-seed-16', 24.82305, 67.027, 'Clifton: Seaview, beach road shacks', 'gps', 87, 'Clifton', 7, true, ARRAY['rising_water']::TEXT[], 'Water is coming into the house, now above the knees.', 'none', NULL, NULL, '{}', NULL, 'unknown', '{}', NULL, 'assigned', true, 65, NULL, NOW() - INTERVAL '236 minutes', NOW() - INTERVAL '236 minutes'),
+  ('00000000-0000-4000-8000-000000000017', 'demo-seed-17', 24.9393, 67.00484, 'Orangi: Sector 11, near the nullah', 'gps', 73, 'Orangi', 4, false, ARRAY['no_food_water']::TEXT[], 'Can manage another day with what we have.', 'none', NULL, NULL, '{}', NULL, 'yes', '{}', NULL, 'assigned', true, 30, NULL, NOW() - INTERVAL '241 minutes', NOW() - INTERVAL '241 minutes'),
+  ('00000000-0000-4000-8000-000000000018', 'demo-seed-18', 24.89606, 67.21873, 'Malir: Saudabad, near the bridge', 'gps', 88, 'Malir', 26, false, ARRAY['no_shelter']::TEXT[], 'Families sleeping outside after their homes flooded.', 'none', NULL, NULL, '{}', NULL, 'yes', ARRAY['infants_children', 'pregnant']::TEXT[], 'Simulated - H. Rizvi · +92 300 0001056', 'investigating', true, 57, NULL, NOW() - INTERVAL '243 minutes', NOW() - INTERVAL '243 minutes'),
+  ('00000000-0000-4000-8000-000000000019', 'demo-seed-19', 24.847, 67.1985, 'Landhi, 89 stop', 'gps', 20, 'Landhi', 5, false, ARRAY['no_shelter']::TEXT[], NULL, 'none', NULL, NULL, '{}', NULL, 'yes', '{}', NULL, 'resolved', true, 22, NOW() - INTERVAL '120 minutes', NOW() - INTERVAL '300 minutes', NOW() - INTERVAL '300 minutes'),
+  ('00000000-0000-4000-8000-000000000020', 'demo-seed-20', 24.86578, 67.03589, 'Saddar: Burns Road, above the sweet shop', 'gps', 15, 'Saddar', 1, false, ARRAY['stranded']::TEXT[], NULL, 'none', NULL, NULL, ARRAY['oxygen']::TEXT[], 'Uses an oxygen concentrator, battery is almost empty.', 'no', ARRAY['bedridden']::TEXT[], NULL, 'resolved', false, 63, NOW() - INTERVAL '359 minutes', NOW() - INTERVAL '525 minutes', NOW() - INTERVAL '525 minutes'),
+  ('00000000-0000-4000-8000-000000000021', 'demo-seed-21', 24.82473, 67.1426, 'Korangi: Korangi crossing, shop row', 'manual', NULL, 'Korangi', 2, false, ARRAY['none']::TEXT[], NULL, 'none', NULL, NULL, ARRAY['insulin']::TEXT[], 'Insulin needs refrigeration and power has been out for a day.', 'yes', '{}', 'Simulated - F. Siddiqui · +92 300 0001273', 'cancelled', true, 20, NULL, NOW() - INTERVAL '639 minutes', NOW() - INTERVAL '639 minutes'),
+  ('00000000-0000-4000-8000-000000000022', 'demo-seed-22', 24.95028, 67.03779, 'North Nazimabad: Block A, near the graveyard wall', 'manual', NULL, 'North Nazimabad', 4, true, ARRAY['rising_water']::TEXT[], 'Water is coming into the house, now above the knees.', 'none', NULL, NULL, '{}', NULL, 'unknown', '{}', NULL, 'cancelled', true, 45, NULL, NOW() - INTERVAL '644 minutes', NOW() - INTERVAL '644 minutes'),
+  ('00000000-0000-4000-8000-000000000023', 'demo-seed-23', 24.85391, 67.03638, 'Saddar: Burns Road, above the sweet shop', 'gps', 33, 'Saddar', 4, false, ARRAY['none']::TEXT[], 'We are safe at home. Please check on us when someone is free.', 'none', NULL, NULL, '{}', NULL, 'yes', '{}', 'Simulated - F. Siddiqui · +92 300 0001154', 'resolved', true, 5, NOW() - INTERVAL '625 minutes', NOW() - INTERVAL '875 minutes', NOW() - INTERVAL '875 minutes'),
+  ('00000000-0000-4000-8000-000000000024', 'demo-seed-24', 24.81577, 67.04185, 'Clifton: Defence phase 2, bungalow row', 'gps', 41, 'Clifton', 4, false, ARRAY['no_food_water']::TEXT[], 'Can manage another day with what we have.', 'none', NULL, NULL, '{}', NULL, 'yes', '{}', NULL, 'resolved', true, 15, NOW() - INTERVAL '904 minutes', NOW() - INTERVAL '1020 minutes', NOW() - INTERVAL '1020 minutes'),
+  ('00000000-0000-4000-8000-000000000025', 'demo-seed-25', 24.96416, 66.97683, 'Orangi: Qasba colony, lane 7', 'manual', NULL, 'Orangi', 6, true, ARRAY['rising_water']::TEXT[], 'Water is coming into the house, now above the knees.', 'none', NULL, NULL, '{}', NULL, 'unknown', '{}', NULL, 'resolved', true, 50, NOW() - INTERVAL '857 minutes', NOW() - INTERVAL '1031 minutes', NOW() - INTERVAL '1031 minutes'),
+  ('00000000-0000-4000-8000-000000000026', 'demo-seed-26', 24.93223, 67.08179, 'Gulshan-e-Iqbal: Safoora chowrangi, side road', 'manual', NULL, 'Gulshan-e-Iqbal', 9, true, ARRAY['rising_water']::TEXT[], 'Water is coming into the house, now above the knees.', 'none', NULL, NULL, '{}', NULL, 'unknown', '{}', NULL, 'resolved', true, 50, NOW() - INTERVAL '1312 minutes', NOW() - INTERVAL '1534 minutes', NOW() - INTERVAL '1534 minutes'),
+  ('00000000-0000-4000-8000-000000000027', 'demo-seed-27', 24.85783, 67.18815, 'Landhi: Sherpao colony, lane 2', 'gps', 64, 'Landhi', 7, true, ARRAY['rising_water', 'trapped']::TEXT[], 'Stuck on the first floor, stairs are under water.', 'none', NULL, NULL, '{}', NULL, 'no', ARRAY['elderly']::TEXT[], NULL, 'resolved', false, 105, NOW() - INTERVAL '1453 minutes', NOW() - INTERVAL '1566 minutes', NOW() - INTERVAL '1566 minutes'),
+  ('00000000-0000-4000-8000-000000000028', 'demo-seed-28', 24.87732, 66.98118, 'Lyari: Kalri, near the football ground', 'manual', NULL, 'Lyari', 3, true, ARRAY['gas_leak']::TEXT[], 'Strong gas smell after the pipe broke in the flood.', 'none', NULL, NULL, '{}', NULL, 'yes', '{}', NULL, 'resolved', true, 35, NOW() - INTERVAL '2025 minutes', NOW() - INTERVAL '2133 minutes', NOW() - INTERVAL '2133 minutes'),
+  ('00000000-0000-4000-8000-000000000029', 'demo-seed-29', 24.81885, 67.0258, 'Clifton: Block 5, near the underpass', 'gps', 73, 'Clifton', 5, true, ARRAY['rising_water', 'trapped']::TEXT[], 'Stuck on the first floor, stairs are under water.', 'none', NULL, NULL, '{}', NULL, 'no', ARRAY['elderly']::TEXT[], NULL, 'resolved', false, 105, NOW() - INTERVAL '2165 minutes', NOW() - INTERVAL '2331 minutes', NOW() - INTERVAL '2331 minutes'),
+  ('00000000-0000-4000-8000-000000000030', 'demo-seed-30', 24.90449, 67.21667, 'Malir: Malir Halt, by the railway line', 'gps', 57, 'Malir', 3, false, ARRAY['stranded']::TEXT[], 'Car stalled in flood water, people waiting on the roof.', 'none', NULL, NULL, '{}', NULL, 'unknown', '{}', 'Simulated - Y. Chaudhry · +92 300 0001147', 'resolved', true, 36, NOW() - INTERVAL '2416 minutes', NOW() - INTERVAL '2682 minutes', NOW() - INTERVAL '2682 minutes');
+
+INSERT INTO report_events (report_id, action, actor, from_value, to_value, note, created_at) VALUES
+  ('00000000-0000-4000-8000-000000000001', 'created', 'seed', NULL, NULL, 'Simulated demo report', NOW() - INTERVAL '5 minutes'),
+  ('00000000-0000-4000-8000-000000000002', 'created', 'seed', NULL, NULL, 'Simulated demo report', NOW() - INTERVAL '8 minutes'),
+  ('00000000-0000-4000-8000-000000000003', 'created', 'seed', NULL, NULL, 'Simulated demo report', NOW() - INTERVAL '18 minutes'),
+  ('00000000-0000-4000-8000-000000000003', 'verify', 'Dispatcher (demo)', 'false', 'true', NULL, NOW() - INTERVAL '18 minutes' + INTERVAL '4 minutes'),
+  ('00000000-0000-4000-8000-000000000003', 'status', 'Dispatcher (demo)', 'pending', 'assigned', NULL, NOW() - INTERVAL '18 minutes' + INTERVAL '8 minutes'),
+  ('00000000-0000-4000-8000-000000000004', 'created', 'seed', NULL, NULL, 'Simulated demo report', NOW() - INTERVAL '20 minutes'),
+  ('00000000-0000-4000-8000-000000000005', 'created', 'seed', NULL, NULL, 'Simulated demo report', NOW() - INTERVAL '35 minutes'),
+  ('00000000-0000-4000-8000-000000000005', 'verify', 'Dispatcher (demo)', 'false', 'true', NULL, NOW() - INTERVAL '35 minutes' + INTERVAL '4 minutes'),
+  ('00000000-0000-4000-8000-000000000005', 'status', 'Dispatcher (demo)', 'pending', 'investigating', NULL, NOW() - INTERVAL '35 minutes' + INTERVAL '8 minutes'),
+  ('00000000-0000-4000-8000-000000000006', 'created', 'seed', NULL, NULL, 'Simulated demo report', NOW() - INTERVAL '49 minutes'),
+  ('00000000-0000-4000-8000-000000000006', 'verify', 'Dispatcher (demo)', 'false', 'true', NULL, NOW() - INTERVAL '49 minutes' + INTERVAL '4 minutes'),
+  ('00000000-0000-4000-8000-000000000006', 'status', 'Dispatcher (demo)', 'pending', 'investigating', NULL, NOW() - INTERVAL '49 minutes' + INTERVAL '8 minutes'),
+  ('00000000-0000-4000-8000-000000000007', 'created', 'seed', NULL, NULL, 'Simulated demo report', NOW() - INTERVAL '49 minutes'),
+  ('00000000-0000-4000-8000-000000000007', 'verify', 'Dispatcher (demo)', 'false', 'true', NULL, NOW() - INTERVAL '49 minutes' + INTERVAL '4 minutes'),
+  ('00000000-0000-4000-8000-000000000007', 'status', 'Dispatcher (demo)', 'pending', 'investigating', NULL, NOW() - INTERVAL '49 minutes' + INTERVAL '8 minutes'),
+  ('00000000-0000-4000-8000-000000000008', 'created', 'seed', NULL, NULL, 'Simulated demo report', NOW() - INTERVAL '50 minutes'),
+  ('00000000-0000-4000-8000-000000000008', 'verify', 'Dispatcher (demo)', 'false', 'true', NULL, NOW() - INTERVAL '50 minutes' + INTERVAL '4 minutes'),
+  ('00000000-0000-4000-8000-000000000008', 'status', 'Dispatcher (demo)', 'pending', 'assigned', NULL, NOW() - INTERVAL '50 minutes' + INTERVAL '8 minutes'),
+  ('00000000-0000-4000-8000-000000000009', 'created', 'seed', NULL, NULL, 'Simulated demo report', NOW() - INTERVAL '70 minutes'),
+  ('00000000-0000-4000-8000-000000000009', 'verify', 'Dispatcher (demo)', 'false', 'true', NULL, NOW() - INTERVAL '70 minutes' + INTERVAL '4 minutes'),
+  ('00000000-0000-4000-8000-000000000010', 'created', 'seed', NULL, NULL, 'Simulated demo report', NOW() - INTERVAL '94 minutes'),
+  ('00000000-0000-4000-8000-000000000010', 'verify', 'Dispatcher (demo)', 'false', 'true', NULL, NOW() - INTERVAL '94 minutes' + INTERVAL '4 minutes'),
+  ('00000000-0000-4000-8000-000000000010', 'status', 'Dispatcher (demo)', 'pending', 'assigned', NULL, NOW() - INTERVAL '94 minutes' + INTERVAL '8 minutes'),
+  ('00000000-0000-4000-8000-000000000011', 'created', 'seed', NULL, NULL, 'Simulated demo report', NOW() - INTERVAL '95 minutes'),
+  ('00000000-0000-4000-8000-000000000011', 'verify', 'Dispatcher (demo)', 'false', 'true', NULL, NOW() - INTERVAL '95 minutes' + INTERVAL '4 minutes'),
+  ('00000000-0000-4000-8000-000000000012', 'created', 'seed', NULL, NULL, 'Simulated demo report', NOW() - INTERVAL '126 minutes'),
+  ('00000000-0000-4000-8000-000000000012', 'verify', 'Dispatcher (demo)', 'false', 'true', NULL, NOW() - INTERVAL '126 minutes' + INTERVAL '4 minutes'),
+  ('00000000-0000-4000-8000-000000000012', 'status', 'Dispatcher (demo)', 'pending', 'assigned', NULL, NOW() - INTERVAL '126 minutes' + INTERVAL '8 minutes'),
+  ('00000000-0000-4000-8000-000000000013', 'created', 'seed', NULL, NULL, 'Simulated demo report', NOW() - INTERVAL '140 minutes'),
+  ('00000000-0000-4000-8000-000000000014', 'created', 'seed', NULL, NULL, 'Simulated demo report', NOW() - INTERVAL '156 minutes'),
+  ('00000000-0000-4000-8000-000000000014', 'verify', 'Dispatcher (demo)', 'false', 'true', NULL, NOW() - INTERVAL '156 minutes' + INTERVAL '4 minutes'),
+  ('00000000-0000-4000-8000-000000000014', 'status', 'Dispatcher (demo)', 'pending', 'assigned', NULL, NOW() - INTERVAL '156 minutes' + INTERVAL '8 minutes'),
+  ('00000000-0000-4000-8000-000000000015', 'created', 'seed', NULL, NULL, 'Simulated demo report', NOW() - INTERVAL '197 minutes'),
+  ('00000000-0000-4000-8000-000000000015', 'verify', 'Dispatcher (demo)', 'false', 'true', NULL, NOW() - INTERVAL '197 minutes' + INTERVAL '4 minutes'),
+  ('00000000-0000-4000-8000-000000000015', 'status', 'Dispatcher (demo)', 'pending', 'assigned', NULL, NOW() - INTERVAL '197 minutes' + INTERVAL '8 minutes'),
+  ('00000000-0000-4000-8000-000000000016', 'created', 'seed', NULL, NULL, 'Simulated demo report', NOW() - INTERVAL '236 minutes'),
+  ('00000000-0000-4000-8000-000000000016', 'verify', 'Dispatcher (demo)', 'false', 'true', NULL, NOW() - INTERVAL '236 minutes' + INTERVAL '4 minutes'),
+  ('00000000-0000-4000-8000-000000000016', 'status', 'Dispatcher (demo)', 'pending', 'assigned', NULL, NOW() - INTERVAL '236 minutes' + INTERVAL '8 minutes'),
+  ('00000000-0000-4000-8000-000000000017', 'created', 'seed', NULL, NULL, 'Simulated demo report', NOW() - INTERVAL '241 minutes'),
+  ('00000000-0000-4000-8000-000000000017', 'verify', 'Dispatcher (demo)', 'false', 'true', NULL, NOW() - INTERVAL '241 minutes' + INTERVAL '4 minutes'),
+  ('00000000-0000-4000-8000-000000000017', 'status', 'Dispatcher (demo)', 'pending', 'assigned', NULL, NOW() - INTERVAL '241 minutes' + INTERVAL '8 minutes'),
+  ('00000000-0000-4000-8000-000000000018', 'created', 'seed', NULL, NULL, 'Simulated demo report', NOW() - INTERVAL '243 minutes'),
+  ('00000000-0000-4000-8000-000000000018', 'verify', 'Dispatcher (demo)', 'false', 'true', NULL, NOW() - INTERVAL '243 minutes' + INTERVAL '4 minutes'),
+  ('00000000-0000-4000-8000-000000000018', 'status', 'Dispatcher (demo)', 'pending', 'investigating', NULL, NOW() - INTERVAL '243 minutes' + INTERVAL '8 minutes'),
+  ('00000000-0000-4000-8000-000000000019', 'created', 'seed', NULL, NULL, 'Simulated demo report', NOW() - INTERVAL '300 minutes'),
+  ('00000000-0000-4000-8000-000000000019', 'verify', 'Dispatcher (demo)', 'false', 'true', NULL, NOW() - INTERVAL '300 minutes' + INTERVAL '4 minutes'),
+  ('00000000-0000-4000-8000-000000000019', 'status', 'Dispatcher (demo)', 'pending', 'resolved', NULL, NOW() - INTERVAL '120 minutes'),
+  ('00000000-0000-4000-8000-000000000020', 'created', 'seed', NULL, NULL, 'Simulated demo report', NOW() - INTERVAL '525 minutes'),
+  ('00000000-0000-4000-8000-000000000020', 'status', 'Dispatcher (demo)', 'pending', 'resolved', NULL, NOW() - INTERVAL '359 minutes'),
+  ('00000000-0000-4000-8000-000000000021', 'created', 'seed', NULL, NULL, 'Simulated demo report', NOW() - INTERVAL '639 minutes'),
+  ('00000000-0000-4000-8000-000000000021', 'verify', 'Dispatcher (demo)', 'false', 'true', NULL, NOW() - INTERVAL '639 minutes' + INTERVAL '4 minutes'),
+  ('00000000-0000-4000-8000-000000000021', 'status', 'Dispatcher (demo)', 'pending', 'cancelled', NULL, NOW() - INTERVAL '639 minutes' + INTERVAL '8 minutes'),
+  ('00000000-0000-4000-8000-000000000022', 'created', 'seed', NULL, NULL, 'Simulated demo report', NOW() - INTERVAL '644 minutes'),
+  ('00000000-0000-4000-8000-000000000022', 'verify', 'Dispatcher (demo)', 'false', 'true', NULL, NOW() - INTERVAL '644 minutes' + INTERVAL '4 minutes'),
+  ('00000000-0000-4000-8000-000000000022', 'status', 'Dispatcher (demo)', 'pending', 'cancelled', NULL, NOW() - INTERVAL '644 minutes' + INTERVAL '8 minutes'),
+  ('00000000-0000-4000-8000-000000000023', 'created', 'seed', NULL, NULL, 'Simulated demo report', NOW() - INTERVAL '875 minutes'),
+  ('00000000-0000-4000-8000-000000000023', 'verify', 'Dispatcher (demo)', 'false', 'true', NULL, NOW() - INTERVAL '875 minutes' + INTERVAL '4 minutes'),
+  ('00000000-0000-4000-8000-000000000023', 'status', 'Dispatcher (demo)', 'pending', 'resolved', NULL, NOW() - INTERVAL '625 minutes'),
+  ('00000000-0000-4000-8000-000000000024', 'created', 'seed', NULL, NULL, 'Simulated demo report', NOW() - INTERVAL '1020 minutes'),
+  ('00000000-0000-4000-8000-000000000024', 'verify', 'Dispatcher (demo)', 'false', 'true', NULL, NOW() - INTERVAL '1020 minutes' + INTERVAL '4 minutes'),
+  ('00000000-0000-4000-8000-000000000024', 'status', 'Dispatcher (demo)', 'pending', 'resolved', NULL, NOW() - INTERVAL '904 minutes'),
+  ('00000000-0000-4000-8000-000000000025', 'created', 'seed', NULL, NULL, 'Simulated demo report', NOW() - INTERVAL '1031 minutes'),
+  ('00000000-0000-4000-8000-000000000025', 'verify', 'Dispatcher (demo)', 'false', 'true', NULL, NOW() - INTERVAL '1031 minutes' + INTERVAL '4 minutes'),
+  ('00000000-0000-4000-8000-000000000025', 'status', 'Dispatcher (demo)', 'pending', 'resolved', NULL, NOW() - INTERVAL '857 minutes'),
+  ('00000000-0000-4000-8000-000000000026', 'created', 'seed', NULL, NULL, 'Simulated demo report', NOW() - INTERVAL '1534 minutes'),
+  ('00000000-0000-4000-8000-000000000026', 'verify', 'Dispatcher (demo)', 'false', 'true', NULL, NOW() - INTERVAL '1534 minutes' + INTERVAL '4 minutes'),
+  ('00000000-0000-4000-8000-000000000026', 'status', 'Dispatcher (demo)', 'pending', 'resolved', NULL, NOW() - INTERVAL '1312 minutes'),
+  ('00000000-0000-4000-8000-000000000027', 'created', 'seed', NULL, NULL, 'Simulated demo report', NOW() - INTERVAL '1566 minutes'),
+  ('00000000-0000-4000-8000-000000000027', 'status', 'Dispatcher (demo)', 'pending', 'resolved', NULL, NOW() - INTERVAL '1453 minutes'),
+  ('00000000-0000-4000-8000-000000000028', 'created', 'seed', NULL, NULL, 'Simulated demo report', NOW() - INTERVAL '2133 minutes'),
+  ('00000000-0000-4000-8000-000000000028', 'verify', 'Dispatcher (demo)', 'false', 'true', NULL, NOW() - INTERVAL '2133 minutes' + INTERVAL '4 minutes'),
+  ('00000000-0000-4000-8000-000000000028', 'status', 'Dispatcher (demo)', 'pending', 'resolved', NULL, NOW() - INTERVAL '2025 minutes'),
+  ('00000000-0000-4000-8000-000000000029', 'created', 'seed', NULL, NULL, 'Simulated demo report', NOW() - INTERVAL '2331 minutes'),
+  ('00000000-0000-4000-8000-000000000029', 'status', 'Dispatcher (demo)', 'pending', 'resolved', NULL, NOW() - INTERVAL '2165 minutes'),
+  ('00000000-0000-4000-8000-000000000030', 'created', 'seed', NULL, NULL, 'Simulated demo report', NOW() - INTERVAL '2682 minutes'),
+  ('00000000-0000-4000-8000-000000000030', 'verify', 'Dispatcher (demo)', 'false', 'true', NULL, NOW() - INTERVAL '2682 minutes' + INTERVAL '4 minutes'),
+  ('00000000-0000-4000-8000-000000000030', 'status', 'Dispatcher (demo)', 'pending', 'resolved', NULL, NOW() - INTERVAL '2416 minutes');
+
+
+-- -----------------------------------------------------------------------------
+-- 4. Response operation: teams, supplies, shelters, hazards, roads (30 each)
+-- -----------------------------------------------------------------------------
+INSERT INTO rescue_teams (id, team_name, team_leader, contact_number, base_location, team_size, capabilities, current_location_lat, current_location_lng, team_type, area, status, verified, created_at) VALUES
+  ('20000000-0000-4000-8000-000000000001', 'Boat Team Alpha', 'Imran Shah', '+92 300 1000001', 'Lyari river jetty', 6, ARRAY['water_rescue', 'evacuation']::TEXT[], 24.865, 66.998, 'boat', 'Lyari', 'assigned', TRUE, NOW() - INTERVAL '5000 minutes'),
+  ('20000000-0000-4000-8000-000000000002', 'Boat Team Bravo', 'Saira Noor', '+92 300 1000002', 'Korangi creek station', 5, ARRAY['water_rescue']::TEXT[], 24.832, 67.12, 'boat', 'Korangi', 'assigned', TRUE, NOW() - INTERVAL '4960 minutes'),
+  ('20000000-0000-4000-8000-000000000003', 'Boat Team Charlie', 'Danish Raza', '+92 300 1000003', 'Malir embankment', 5, ARRAY['water_rescue', 'evacuation']::TEXT[], 24.892, 67.195, 'boat', 'Malir', 'assigned', TRUE, NOW() - INTERVAL '4920 minutes'),
+  ('20000000-0000-4000-8000-000000000004', 'Boat Team Delta', 'Kamran Ali', '+92 300 1000004', 'Keamari harbour', 4, ARRAY['water_rescue']::TEXT[], 24.828, 66.978, 'boat', 'Keamari', 'available', TRUE, NOW() - INTERVAL '4880 minutes'),
+  ('20000000-0000-4000-8000-000000000005', 'Medical Unit 3', 'Dr. Hina Farooq', '+92 300 1000005', 'Saddar dispensary', 4, ARRAY['medical', 'evacuation']::TEXT[], 24.86, 67.025, 'medical', 'Saddar', 'assigned', TRUE, NOW() - INTERVAL '4840 minutes'),
+  ('20000000-0000-4000-8000-000000000006', 'Medical Unit 5', 'Dr. Owais Tariq', '+92 300 1000006', 'Gulshan clinic', 4, ARRAY['medical']::TEXT[], 24.915, 67.09, 'medical', 'Gulshan-e-Iqbal', 'assigned', TRUE, NOW() - INTERVAL '4800 minutes'),
+  ('20000000-0000-4000-8000-000000000007', 'Medical Unit 8', 'Dr. Mariam Zaidi', '+92 300 1000007', 'Landhi health centre', 3, ARRAY['medical']::TEXT[], 24.85, 67.195, 'medical', 'Landhi', 'available', TRUE, NOW() - INTERVAL '4760 minutes'),
+  ('20000000-0000-4000-8000-000000000008', 'Search & Rescue Bravo', 'Faisal Mehmood', '+92 300 1000008', 'Korangi fire station', 8, ARRAY['search_rescue', 'fire']::TEXT[], 24.83, 67.125, 'search_rescue', 'Korangi', 'available', TRUE, NOW() - INTERVAL '4720 minutes'),
+  ('20000000-0000-4000-8000-000000000009', 'Search & Rescue Echo', 'Adeel Bukhari', '+92 300 1000009', 'Orangi civil defence post', 7, ARRAY['search_rescue']::TEXT[], 24.948, 66.992, 'search_rescue', 'Orangi', 'assigned', TRUE, NOW() - INTERVAL '4680 minutes'),
+  ('20000000-0000-4000-8000-000000000010', 'Search & Rescue Foxtrot', 'Rizwan Qadir', '+92 300 1000010', 'North Nazimabad depot', 6, ARRAY['search_rescue', 'evacuation']::TEXT[], 24.94, 67.04, 'search_rescue', 'North Nazimabad', 'assigned', TRUE, NOW() - INTERVAL '4640 minutes'),
+  ('20000000-0000-4000-8000-000000000011', 'Fire Response Kilo', 'Tahir Anwar', '+92 300 1000011', 'Clifton fire station', 6, ARRAY['fire', 'search_rescue']::TEXT[], 24.816, 67.032, 'fire', 'Clifton', 'available', TRUE, NOW() - INTERVAL '4600 minutes'),
+  ('20000000-0000-4000-8000-000000000012', 'Evacuation Bus Crew 2', 'Nasir Hameed', '+92 300 1000012', 'Saddar bus depot', 3, ARRAY['evacuation']::TEXT[], 24.854, 67.019, 'transport', 'Saddar', 'available', TRUE, NOW() - INTERVAL '4560 minutes'),
+  ('20000000-0000-4000-8000-000000000013', 'Evacuation Truck Crew 4', 'Junaid Lakhani', '+92 300 1000013', 'Landhi truck yard', 4, ARRAY['evacuation', 'logistics']::TEXT[], 24.843, 67.205, 'transport', 'Landhi', 'assigned', TRUE, NOW() - INTERVAL '4520 minutes'),
+  ('20000000-0000-4000-8000-000000000014', 'Logistics Truck 7', 'Shoaib Rehman', '+92 300 1000014', 'Gulshan relief store', 3, ARRAY['logistics']::TEXT[], 24.923, 67.09, 'logistics', 'Gulshan-e-Iqbal', 'unavailable', TRUE, NOW() - INTERVAL '4480 minutes'),
+  ('20000000-0000-4000-8000-000000000015', 'Logistics Truck 9', 'Waleed Khokhar', '+92 300 1000015', 'Malir relief store', 3, ARRAY['logistics']::TEXT[], 24.9, 67.2, 'logistics', 'Malir', 'available', TRUE, NOW() - INTERVAL '4440 minutes'),
+  ('20000000-0000-4000-8000-000000000016', 'Community Volunteers Orangi', 'Parveen Akhtar', '+92 300 1000016', 'Orangi community hall', 12, ARRAY['evacuation', 'logistics']::TEXT[], 24.953, 66.988, 'volunteer', 'Orangi', 'unavailable', TRUE, NOW() - INTERVAL '4400 minutes'),
+  ('20000000-0000-4000-8000-000000000017', 'Boat Team Echo', 'Yasir Mallah', '+92 300 1000017', 'Clifton Seaview jetty', 5, ARRAY['water_rescue', 'evacuation']::TEXT[], 24.8235, 67.0265, 'boat', 'Clifton', 'available', TRUE, NOW() - INTERVAL '4360 minutes'),
+  ('20000000-0000-4000-8000-000000000018', 'Boat Team Foxtrot', 'Zahid Mirani', '+92 300 1000018', 'Landhi canal boat post', 4, ARRAY['water_rescue']::TEXT[], 24.8475, 67.1995, 'boat', 'Landhi', 'available', TRUE, NOW() - INTERVAL '4320 minutes'),
+  ('20000000-0000-4000-8000-000000000019', 'Boat Team Golf', 'Nadeem Baloch', '+92 300 1000019', 'Baba Island jetty', 5, ARRAY['water_rescue', 'evacuation']::TEXT[], 24.8335, 66.9835, 'boat', 'Keamari', 'available', TRUE, NOW() - INTERVAL '4280 minutes'),
+  ('20000000-0000-4000-8000-000000000020', 'Medical Unit 2', 'Dr. Sadia Rauf', '+92 300 1000020', 'Lyari dispensary', 4, ARRAY['medical']::TEXT[], 24.872, 66.992, 'medical', 'Lyari', 'available', TRUE, NOW() - INTERVAL '4240 minutes'),
+  ('20000000-0000-4000-8000-000000000021', 'Medical Unit 6', 'Dr. Bilal Chishti', '+92 300 1000021', 'Korangi health post', 4, ARRAY['medical', 'evacuation']::TEXT[], 24.829, 67.131, 'medical', 'Korangi', 'available', TRUE, NOW() - INTERVAL '4200 minutes'),
+  ('20000000-0000-4000-8000-000000000022', 'Medical Unit 9', 'Dr. Aneela Shah', '+92 300 1000022', 'Orangi maternity home', 3, ARRAY['medical']::TEXT[], 24.944, 66.998, 'medical', 'Orangi', 'unavailable', TRUE, NOW() - INTERVAL '4160 minutes'),
+  ('20000000-0000-4000-8000-000000000023', 'Medical Unit 11', 'Dr. Furqan Ali', '+92 300 1000023', 'North Nazimabad clinic', 4, ARRAY['medical']::TEXT[], 24.946, 67.046, 'medical', 'North Nazimabad', 'available', TRUE, NOW() - INTERVAL '4120 minutes'),
+  ('20000000-0000-4000-8000-000000000024', 'Search & Rescue Golf', 'Haroon Rasheed', '+92 300 1000024', 'Malir civil defence post', 7, ARRAY['search_rescue', 'evacuation']::TEXT[], 24.894, 67.198, 'search_rescue', 'Malir', 'available', TRUE, NOW() - INTERVAL '4080 minutes'),
+  ('20000000-0000-4000-8000-000000000025', 'Search & Rescue Hotel', 'Ghazala Parveen', '+92 300 1000025', 'Gulshan fire station', 6, ARRAY['search_rescue', 'fire']::TEXT[], 24.921, 67.094, 'search_rescue', 'Gulshan-e-Iqbal', 'available', TRUE, NOW() - INTERVAL '4040 minutes'),
+  ('20000000-0000-4000-8000-000000000026', 'Fire Response Lima', 'Sohail Akhtar', '+92 300 1000026', 'Landhi fire station', 6, ARRAY['fire']::TEXT[], 24.851, 67.201, 'fire', 'Landhi', 'available', TRUE, NOW() - INTERVAL '4000 minutes'),
+  ('20000000-0000-4000-8000-000000000027', 'Fire Response Mike', 'Ejaz Hussain', '+92 300 1000027', 'Lyari fire post', 5, ARRAY['fire', 'search_rescue']::TEXT[], 24.868, 66.999, 'fire', 'Lyari', 'available', TRUE, NOW() - INTERVAL '3960 minutes'),
+  ('20000000-0000-4000-8000-000000000028', 'Evacuation Bus Crew 5', 'Anwar Gill', '+92 300 1000028', 'Gulshan bus terminal', 3, ARRAY['evacuation']::TEXT[], 24.917, 67.087, 'transport', 'Gulshan-e-Iqbal', 'available', TRUE, NOW() - INTERVAL '3920 minutes'),
+  ('20000000-0000-4000-8000-000000000029', 'Evacuation Truck Crew 6', 'Rashid Dar', '+92 300 1000029', 'Keamari truck stand', 4, ARRAY['evacuation', 'logistics']::TEXT[], 24.825, 66.981, 'transport', 'Keamari', 'unavailable', TRUE, NOW() - INTERVAL '3880 minutes'),
+  ('20000000-0000-4000-8000-000000000030', 'Logistics Truck 12', 'Mubashir Iqbal', '+92 300 1000030', 'Orangi relief store', 3, ARRAY['logistics']::TEXT[], 24.95, 66.99, 'logistics', 'Orangi', 'available', TRUE, NOW() - INTERVAL '3840 minutes');
+
+INSERT INTO resources (id, resource_type, name, quantity, team_id, status, notes, created_at) VALUES
+  ('40000000-0000-4000-8000-000000000001', 'boat', 'Boat Team Alpha rescue boat', 1, '20000000-0000-4000-8000-000000000001', 'in_use', NULL, NOW() - INTERVAL '4800 minutes'),
+  ('40000000-0000-4000-8000-000000000002', 'boat', 'Boat Team Bravo rescue boat', 1, '20000000-0000-4000-8000-000000000002', 'in_use', NULL, NOW() - INTERVAL '4775 minutes'),
+  ('40000000-0000-4000-8000-000000000003', 'boat', 'Boat Team Charlie rescue boat', 1, '20000000-0000-4000-8000-000000000003', 'in_use', NULL, NOW() - INTERVAL '4750 minutes'),
+  ('40000000-0000-4000-8000-000000000004', 'boat', 'Boat Team Delta rescue boat', 1, '20000000-0000-4000-8000-000000000004', 'available', NULL, NOW() - INTERVAL '4725 minutes'),
+  ('40000000-0000-4000-8000-000000000005', 'boat', 'Boat Team Echo rescue boat', 1, '20000000-0000-4000-8000-000000000017', 'available', NULL, NOW() - INTERVAL '4700 minutes'),
+  ('40000000-0000-4000-8000-000000000006', 'boat', 'Boat Team Foxtrot rescue boat', 1, '20000000-0000-4000-8000-000000000018', 'available', NULL, NOW() - INTERVAL '4675 minutes'),
+  ('40000000-0000-4000-8000-000000000007', 'boat', 'Boat Team Golf rescue boat', 1, '20000000-0000-4000-8000-000000000019', 'available', NULL, NOW() - INTERVAL '4650 minutes'),
+  ('40000000-0000-4000-8000-000000000008', 'vehicle', 'Medical Unit 3 ambulance', 1, '20000000-0000-4000-8000-000000000005', 'in_use', NULL, NOW() - INTERVAL '4625 minutes'),
+  ('40000000-0000-4000-8000-000000000009', 'vehicle', 'Medical Unit 5 ambulance', 1, '20000000-0000-4000-8000-000000000006', 'in_use', NULL, NOW() - INTERVAL '4600 minutes'),
+  ('40000000-0000-4000-8000-000000000010', 'vehicle', 'Medical Unit 8 ambulance', 1, '20000000-0000-4000-8000-000000000007', 'available', NULL, NOW() - INTERVAL '4575 minutes'),
+  ('40000000-0000-4000-8000-000000000011', 'vehicle', 'Medical Unit 2 ambulance', 1, '20000000-0000-4000-8000-000000000020', 'available', NULL, NOW() - INTERVAL '4550 minutes'),
+  ('40000000-0000-4000-8000-000000000012', 'vehicle', 'Medical Unit 6 ambulance', 1, '20000000-0000-4000-8000-000000000021', 'available', NULL, NOW() - INTERVAL '4525 minutes'),
+  ('40000000-0000-4000-8000-000000000013', 'vehicle', 'Medical Unit 9 ambulance', 1, '20000000-0000-4000-8000-000000000022', 'available', NULL, NOW() - INTERVAL '4500 minutes'),
+  ('40000000-0000-4000-8000-000000000014', 'vehicle', 'Medical Unit 11 ambulance', 1, '20000000-0000-4000-8000-000000000023', 'available', NULL, NOW() - INTERVAL '4475 minutes'),
+  ('40000000-0000-4000-8000-000000000015', 'vehicle', 'Search & Rescue Bravo utility truck', 1, '20000000-0000-4000-8000-000000000008', 'available', NULL, NOW() - INTERVAL '4450 minutes'),
+  ('40000000-0000-4000-8000-000000000016', 'vehicle', 'Search & Rescue Echo utility truck', 1, '20000000-0000-4000-8000-000000000009', 'in_use', NULL, NOW() - INTERVAL '4425 minutes'),
+  ('40000000-0000-4000-8000-000000000017', 'vehicle', 'Search & Rescue Foxtrot utility truck', 1, '20000000-0000-4000-8000-000000000010', 'in_use', NULL, NOW() - INTERVAL '4400 minutes'),
+  ('40000000-0000-4000-8000-000000000018', 'vehicle', 'Fire Response Kilo utility truck', 1, '20000000-0000-4000-8000-000000000011', 'available', NULL, NOW() - INTERVAL '4375 minutes'),
+  ('40000000-0000-4000-8000-000000000019', 'vehicle', 'Evacuation Bus Crew 2 transport', 1, '20000000-0000-4000-8000-000000000012', 'available', NULL, NOW() - INTERVAL '4350 minutes'),
+  ('40000000-0000-4000-8000-000000000020', 'vehicle', 'Evacuation Truck Crew 4 transport', 1, '20000000-0000-4000-8000-000000000013', 'in_use', NULL, NOW() - INTERVAL '4325 minutes'),
+  ('40000000-0000-4000-8000-000000000021', 'boat', 'Spare inflatable boat', 2, NULL, 'available', NULL, NOW() - INTERVAL '4300 minutes'),
+  ('40000000-0000-4000-8000-000000000022', 'boat', 'Reserve boat (engine fault)', 1, NULL, 'maintenance', 'Outboard motor being repaired', NOW() - INTERVAL '4275 minutes'),
+  ('40000000-0000-4000-8000-000000000023', 'vehicle', 'Reserve pickup truck', 2, NULL, 'available', NULL, NOW() - INTERVAL '4250 minutes'),
+  ('40000000-0000-4000-8000-000000000024', 'first_aid', 'First aid kits, warehouse A', 24, NULL, 'available', NULL, NOW() - INTERVAL '4225 minutes'),
+  ('40000000-0000-4000-8000-000000000025', 'medical_supplies', 'IV fluids and dressings', 18, NULL, 'available', NULL, NOW() - INTERVAL '4200 minutes'),
+  ('40000000-0000-4000-8000-000000000026', 'medical_supplies', 'Insulin cooler packs', 3, NULL, 'in_use', NULL, NOW() - INTERVAL '4175 minutes'),
+  ('40000000-0000-4000-8000-000000000027', 'food', 'Dry ration packs, Malir store', 120, NULL, 'available', NULL, NOW() - INTERVAL '4150 minutes'),
+  ('40000000-0000-4000-8000-000000000028', 'food', 'Dry ration packs, Gulshan store', 2, NULL, 'available', 'Almost gone, restock needed', NOW() - INTERVAL '4125 minutes'),
+  ('40000000-0000-4000-8000-000000000029', 'water', 'Bottled water crates, Lyari', 6, NULL, 'in_use', NULL, NOW() - INTERVAL '4100 minutes'),
+  ('40000000-0000-4000-8000-000000000030', 'water', 'Water tanker (leaking)', 1, NULL, 'maintenance', NULL, NOW() - INTERVAL '4075 minutes');
+
+INSERT INTO shelters (id, name, address, area, location_lat, location_lng, capacity, current_occupancy, contact_number, services, status, verified, created_at) VALUES
+  ('30000000-0000-4000-8000-000000000001', 'Govt. Boys School Shelter (Lyari)', 'Chakiwara road, Lyari', 'Lyari', 24.874, 66.999, 300, 210, '+92 21 5550101', ARRAY['food', 'water', 'medical']::TEXT[], 'open', true, NOW() - INTERVAL '3000 minutes'),
+  ('30000000-0000-4000-8000-000000000002', 'Community Hall Gulshan', 'Block 7, Gulshan-e-Iqbal', 'Gulshan-e-Iqbal', 24.918, 67.089, 150, 150, '+92 21 5550102', ARRAY['food', 'water']::TEXT[], 'full', true, NOW() - INTERVAL '2940 minutes'),
+  ('30000000-0000-4000-8000-000000000003', 'Malir Relief Camp', 'Malir cantonment road', 'Malir', 24.901, 67.19, 500, 180, '+92 21 5550103', ARRAY['food', 'water', 'medical', 'power']::TEXT[], 'open', true, NOW() - INTERVAL '2880 minutes'),
+  ('30000000-0000-4000-8000-000000000004', 'Korangi Sports Complex', 'Sector 33, Korangi', 'Korangi', 24.827, 67.122, 400, 90, '+92 21 5550104', ARRAY['water', 'power']::TEXT[], 'open', true, NOW() - INTERVAL '2820 minutes'),
+  ('30000000-0000-4000-8000-000000000005', 'Landhi Girls College Shelter', 'Landhi 6', 'Landhi', 24.848, 67.198, 250, 240, '+92 21 5550105', ARRAY['food', 'water']::TEXT[], 'open', true, NOW() - INTERVAL '2760 minutes'),
+  ('30000000-0000-4000-8000-000000000006', 'Keamari Port Trust Hall', 'Port Trust road, Keamari', 'Keamari', 24.826, 66.979, 200, 64, '+92 21 5550106', ARRAY['water', 'medical']::TEXT[], 'open', true, NOW() - INTERVAL '2700 minutes'),
+  ('30000000-0000-4000-8000-000000000007', 'Orangi Community Centre', 'Sector 11, Orangi', 'Orangi', 24.951, 66.994, 180, 180, '+92 21 5550107', ARRAY['food', 'water']::TEXT[], 'full', true, NOW() - INTERVAL '2640 minutes'),
+  ('30000000-0000-4000-8000-000000000008', 'North Nazimabad Girls School', 'Block H, North Nazimabad', 'North Nazimabad', 24.944, 67.043, 220, 35, '+92 21 5550108', ARRAY['food', 'water', 'power']::TEXT[], 'open', true, NOW() - INTERVAL '2580 minutes'),
+  ('30000000-0000-4000-8000-000000000009', 'Saddar Church Hall', 'Zaibunnisa street, Saddar', 'Saddar', 24.855, 67.026, 120, 0, '+92 21 5550109', ARRAY['water']::TEXT[], 'closed', true, NOW() - INTERVAL '2520 minutes'),
+  ('30000000-0000-4000-8000-000000000010', 'Clifton Youth Centre', 'Block 2, Clifton', 'Clifton', 24.816, 67.029, 140, 22, '+92 21 5550110', ARRAY['food', 'water', 'medical']::TEXT[], 'open', true, NOW() - INTERVAL '2460 minutes'),
+  ('30000000-0000-4000-8000-000000000011', 'Rumoured shelter at mosque', 'Orangi, unconfirmed', 'Orangi', 24.945, 66.995, NULL, 0, NULL, '{}', 'open', false, NOW() - INTERVAL '2400 minutes'),
+  ('30000000-0000-4000-8000-000000000012', 'Lyari Girls Secondary School', 'Baghdadi main road, Lyari', 'Lyari', 24.869, 66.989, 260, 140, NULL, ARRAY['food', 'water']::TEXT[], 'open', true, NOW() - INTERVAL '3940 minutes'),
+  ('30000000-0000-4000-8000-000000000013', 'Kalri Jamat Khana Hall', 'Kalri, Lyari', 'Lyari', 24.877, 66.981, 160, 160, NULL, ARRAY['food', 'water', 'medical']::TEXT[], 'full', true, NOW() - INTERVAL '3880 minutes'),
+  ('30000000-0000-4000-8000-000000000014', 'Korangi Industrial Area Hall', 'Sector 23, Korangi', 'Korangi', 24.837, 67.135, 350, 120, NULL, ARRAY['water', 'power']::TEXT[], 'open', true, NOW() - INTERVAL '3820 minutes'),
+  ('30000000-0000-4000-8000-000000000015', 'Qayyumabad Community School', 'Qayyumabad, Korangi', 'Korangi', 24.831, 67.116, 200, 75, NULL, ARRAY['food', 'water']::TEXT[], 'open', true, NOW() - INTERVAL '3760 minutes'),
+  ('30000000-0000-4000-8000-000000000016', 'Fish Harbour Workers Hall', 'Fish harbour road, Keamari', 'Keamari', 24.831, 66.972, 180, 90, NULL, ARRAY['food', 'water']::TEXT[], 'open', true, NOW() - INTERVAL '3700 minutes'),
+  ('30000000-0000-4000-8000-000000000017', 'Sultanabad Boys School', 'Sultanabad, Keamari', 'Keamari', 24.837, 66.986, 220, 0, NULL, ARRAY['water']::TEXT[], 'closed', true, NOW() - INTERVAL '3640 minutes'),
+  ('30000000-0000-4000-8000-000000000018', 'Safoora Goth Government School', 'Safoora chowrangi, Gulshan-e-Iqbal', 'Gulshan-e-Iqbal', 24.932, 67.082, 300, 110, NULL, ARRAY['food', 'water', 'medical', 'power']::TEXT[], 'open', true, NOW() - INTERVAL '3580 minutes'),
+  ('30000000-0000-4000-8000-000000000019', 'Gulshan Block 13 Mosque Hall', 'Block 13, Gulshan-e-Iqbal', 'Gulshan-e-Iqbal', 24.921, 67.098, 140, 140, NULL, ARRAY['water']::TEXT[], 'full', true, NOW() - INTERVAL '3520 minutes'),
+  ('30000000-0000-4000-8000-000000000020', 'Orangi Sector 5 Madrasa Hall', 'Sector 5, Orangi', 'Orangi', 24.944, 66.981, 200, 95, NULL, ARRAY['food', 'water']::TEXT[], 'open', true, NOW() - INTERVAL '3460 minutes'),
+  ('30000000-0000-4000-8000-000000000021', 'Qasba Colony Girls School', 'Qasba colony, Orangi', 'Orangi', 24.964, 66.977, 240, 60, NULL, ARRAY['food', 'water', 'medical']::TEXT[], 'open', true, NOW() - INTERVAL '3400 minutes'),
+  ('30000000-0000-4000-8000-000000000022', 'Saddar Municipal Library Hall', 'Zainab Market side, Saddar', 'Saddar', 24.857, 67.025, 130, 45, NULL, ARRAY['water', 'power']::TEXT[], 'open', true, NOW() - INTERVAL '3340 minutes'),
+  ('30000000-0000-4000-8000-000000000023', 'Frere Town Parish Hall', 'Frere Town, Saddar', 'Saddar', 24.868, 67.013, 110, 110, NULL, ARRAY['food', 'water']::TEXT[], 'full', true, NOW() - INTERVAL '3280 minutes'),
+  ('30000000-0000-4000-8000-000000000024', 'Malir Halt Railway Institute', 'Malir Halt', 'Malir', 24.881, 67.205, 280, 130, NULL, ARRAY['food', 'water', 'power']::TEXT[], 'open', true, NOW() - INTERVAL '3220 minutes'),
+  ('30000000-0000-4000-8000-000000000025', 'Saudabad Government College', 'Saudabad, Malir', 'Malir', 24.881, 67.19, 320, 210, NULL, ARRAY['food', 'water', 'medical']::TEXT[], 'open', true, NOW() - INTERVAL '3160 minutes'),
+  ('30000000-0000-4000-8000-000000000026', 'Sherpao Colony Primary School', 'Sherpao colony, Landhi', 'Landhi', 24.849, 67.191, 150, 20, NULL, ARRAY['water']::TEXT[], 'open', true, NOW() - INTERVAL '3100 minutes'),
+  ('30000000-0000-4000-8000-000000000027', 'Muslimabad Community Centre', 'Muslimabad, Landhi', 'Landhi', 24.841, 67.213, 180, 70, NULL, ARRAY['food', 'water']::TEXT[], 'open', false, NOW() - INTERVAL '3040 minutes'),
+  ('30000000-0000-4000-8000-000000000028', 'Defence Phase 2 Club House', 'Phase 2, Clifton', 'Clifton', 24.816, 67.042, 160, 30, NULL, ARRAY['food', 'water', 'power']::TEXT[], 'open', true, NOW() - INTERVAL '2980 minutes'),
+  ('30000000-0000-4000-8000-000000000029', 'Block A Graveyard Road School', 'Block A, North Nazimabad', 'North Nazimabad', 24.929, 67.039, 210, 95, NULL, ARRAY['food', 'water']::TEXT[], 'open', true, NOW() - INTERVAL '2920 minutes'),
+  ('30000000-0000-4000-8000-000000000030', 'Block N Community Hall', 'Block N, North Nazimabad', 'North Nazimabad', 24.952, 67.045, 170, 0, NULL, ARRAY['water']::TEXT[], 'closed', false, NOW() - INTERVAL '2860 minutes');
+
+INSERT INTO route_hazards (id, description, location_lat, location_lng, radius_km, severity, active, created_at) VALUES
+  ('50000000-0000-4000-8000-000000000001', 'Lyari Expressway underpass flooded', 24.866, 66.995, 0.8, 'high', true, NOW() - INTERVAL '1500 minutes'),
+  ('50000000-0000-4000-8000-000000000002', 'Korangi Road submerged near Qayyumabad', 24.834, 67.1, 1.2, 'high', true, NOW() - INTERVAL '1460 minutes'),
+  ('50000000-0000-4000-8000-000000000003', 'Debris on Malir River bridge approach', 24.887, 67.184, 0.5, 'medium', true, NOW() - INTERVAL '1420 minutes'),
+  ('50000000-0000-4000-8000-000000000004', 'Landhi 89 stop road under 1 m of water', 24.847, 67.196, 1, 'high', true, NOW() - INTERVAL '1380 minutes'),
+  ('50000000-0000-4000-8000-000000000005', 'Orangi nullah bridge closed, cracked structure', 24.948, 66.988, 0.6, 'high', true, NOW() - INTERVAL '1340 minutes'),
+  ('50000000-0000-4000-8000-000000000006', 'Fallen trees on Sharae Faisal service lane', 24.86, 67.033, 0.4, 'low', true, NOW() - INTERVAL '1300 minutes'),
+  ('50000000-0000-4000-8000-000000000007', 'Keamari Port Road waterlogged', 24.823, 66.975, 0.9, 'medium', true, NOW() - INTERVAL '1260 minutes'),
+  ('50000000-0000-4000-8000-000000000008', 'Gulshan Block 7 underpass flooded', 24.92, 67.088, 0.7, 'high', true, NOW() - INTERVAL '1220 minutes'),
+  ('50000000-0000-4000-8000-000000000009', 'Slow traffic and mud on University Road (cleared)', 24.932, 67.105, 0.5, 'low', false, NOW() - INTERVAL '1180 minutes'),
+  ('50000000-0000-4000-8000-000000000010', 'Baghdadi main road knee-deep in water', 24.871, 66.988, 0.6, 'medium', true, NOW() - INTERVAL '1140 minutes'),
+  ('50000000-0000-4000-8000-000000000011', 'Chakiwara bridge approach blocked by a stalled truck', 24.8705, 66.9915, 0.4, 'medium', true, NOW() - INTERVAL '1100 minutes'),
+  ('50000000-0000-4000-8000-000000000012', 'Kalri nullah overflowing onto the road', 24.8775, 66.982, 0.9, 'high', true, NOW() - INTERVAL '1060 minutes'),
+  ('50000000-0000-4000-8000-000000000013', 'Sector 31 main road under 60 cm of water', 24.8185, 67.1235, 1, 'high', true, NOW() - INTERVAL '1020 minutes'),
+  ('50000000-0000-4000-8000-000000000014', 'Korangi Crossing flyover ramp cracked', 24.8247, 67.1426, 0.5, 'high', true, NOW() - INTERVAL '980 minutes'),
+  ('50000000-0000-4000-8000-000000000015', 'Sector 5 school road blocked by fallen wall', 24.8335, 67.1352, 0.4, 'medium', true, NOW() - INTERVAL '940 minutes'),
+  ('50000000-0000-4000-8000-000000000016', 'Fish harbour approach road flooded', 24.8291, 66.9768, 0.8, 'high', true, NOW() - INTERVAL '900 minutes'),
+  ('50000000-0000-4000-8000-000000000017', 'Sultanabad main road blocked by fallen wires', 24.8373, 66.9863, 0.4, 'medium', true, NOW() - INTERVAL '860 minutes'),
+  ('50000000-0000-4000-8000-000000000018', 'Safoora chowrangi underpass flooded', 24.9322, 67.0818, 0.8, 'high', true, NOW() - INTERVAL '820 minutes'),
+  ('50000000-0000-4000-8000-000000000019', 'Block 13 road partly collapsed by sinkhole', 24.9215, 67.0981, 0.3, 'high', true, NOW() - INTERVAL '780 minutes'),
+  ('50000000-0000-4000-8000-000000000020', 'Sector 11 nullah road waterlogged', 24.9393, 67.0048, 0.7, 'medium', true, NOW() - INTERVAL '740 minutes'),
+  ('50000000-0000-4000-8000-000000000021', 'Qasba colony lane 7 blocked by debris', 24.9642, 66.9768, 0.3, 'low', true, NOW() - INTERVAL '700 minutes'),
+  ('50000000-0000-4000-8000-000000000022', 'Burns Road low section flooded', 24.8539, 67.0364, 0.5, 'medium', true, NOW() - INTERVAL '660 minutes'),
+  ('50000000-0000-4000-8000-000000000023', 'Empress Market back lane blocked by stalled cars', 24.8692, 67.0341, 0.3, 'low', true, NOW() - INTERVAL '620 minutes'),
+  ('50000000-0000-4000-8000-000000000024', 'Saudabad bridge approach under water', 24.8839, 67.1902, 0.9, 'high', true, NOW() - INTERVAL '580 minutes'),
+  ('50000000-0000-4000-8000-000000000025', 'Malir Halt railway crossing closed, track washed out', 24.9045, 67.2167, 0.6, 'high', true, NOW() - INTERVAL '540 minutes'),
+  ('50000000-0000-4000-8000-000000000026', 'Sherpao colony lane 2 flooded and impassable', 24.8486, 67.1908, 0.7, 'high', true, NOW() - INTERVAL '500 minutes'),
+  ('50000000-0000-4000-8000-000000000027', 'Defence phase 2 service road blocked by fallen tree', 24.8158, 67.0419, 0.3, 'low', false, NOW() - INTERVAL '460 minutes'),
+  ('50000000-0000-4000-8000-000000000028', 'Seaview beach road covered by sand and water', 24.8231, 67.027, 0.8, 'medium', true, NOW() - INTERVAL '420 minutes'),
+  ('50000000-0000-4000-8000-000000000029', 'Block A road flooded near the graveyard wall', 24.9288, 67.0392, 0.6, 'medium', true, NOW() - INTERVAL '380 minutes'),
+  ('50000000-0000-4000-8000-000000000030', 'Block H underpass flooded, vehicles stuck', 24.9433, 67.0418, 0.7, 'high', false, NOW() - INTERVAL '340 minutes');
+
+INSERT INTO blocked_roads (id, description, reason, area, path, verified) VALUES
+  ('10000000-0000-4000-8000-000000000001', 'Lyari Expressway underpass flooded', 'flooding', 'Lyari', '[[24.862,66.988],[24.866,66.995],[24.87,67.001]]'::JSONB, true),
+  ('10000000-0000-4000-8000-000000000002', 'Korangi Road submerged near Qayyumabad', 'flooding', 'Korangi', '[[24.836,67.088],[24.834,67.1],[24.832,67.11]]'::JSONB, true),
+  ('10000000-0000-4000-8000-000000000003', 'Debris on Malir River bridge approach', 'debris', 'Malir', '[[24.885,67.18],[24.888,67.186]]'::JSONB, true),
+  ('10000000-0000-4000-8000-000000000004', 'Landhi 89 stop road under 1 m of water', 'flooding', 'Landhi', '[[24.846,67.19],[24.848,67.202]]'::JSONB, true),
+  ('10000000-0000-4000-8000-000000000005', 'Orangi nullah bridge closed, structure cracked', 'structural', 'Orangi', '[[24.947,66.985],[24.949,66.992]]'::JSONB, true),
+  ('10000000-0000-4000-8000-000000000006', 'Fallen trees on Sharae Faisal service lane', 'debris', 'Saddar', '[[24.858,67.03],[24.862,67.036]]'::JSONB, true),
+  ('10000000-0000-4000-8000-000000000007', 'Keamari Port Road waterlogged', 'flooding', 'Keamari', '[[24.82,66.97],[24.826,66.98]]'::JSONB, true),
+  ('10000000-0000-4000-8000-000000000008', 'Gulshan Block 7 underpass flooded', 'flooding', 'Gulshan-e-Iqbal', '[[24.918,67.085],[24.922,67.092]]'::JSONB, true),
+  ('10000000-0000-4000-8000-000000000009', 'Possible block on University Road', 'other', 'Gulshan-e-Iqbal', '[[24.93,67.1],[24.935,67.11]]'::JSONB, false),
+  ('10000000-0000-4000-8000-000000000010', 'Baghdadi main road knee-deep in water', 'flooding', 'Lyari', '[[24.868,66.984],[24.871,66.988],[24.874,66.992]]'::JSONB, true),
+  ('10000000-0000-4000-8000-000000000011', 'Chakiwara bridge approach blocked by a stalled truck', 'other', 'Lyari', '[[24.8675,66.9875],[24.8705,66.9915],[24.8735,66.9955]]'::JSONB, true),
+  ('10000000-0000-4000-8000-000000000012', 'Kalri nullah overflowing onto the road', 'flooding', 'Lyari', '[[24.8745,66.978],[24.8775,66.982],[24.8805,66.986]]'::JSONB, true),
+  ('10000000-0000-4000-8000-000000000013', 'Sector 31 main road under 60 cm of water', 'flooding', 'Korangi', '[[24.8155,67.1195],[24.8185,67.1235],[24.8215,67.1275]]'::JSONB, true),
+  ('10000000-0000-4000-8000-000000000014', 'Korangi Crossing flyover ramp cracked', 'structural', 'Korangi', '[[24.8217,67.1386],[24.8247,67.1426],[24.8277,67.1466]]'::JSONB, true),
+  ('10000000-0000-4000-8000-000000000015', 'Sector 5 school road blocked by fallen wall', 'collapse', 'Korangi', '[[24.8305,67.1312],[24.8335,67.1352],[24.8365,67.1392]]'::JSONB, true),
+  ('10000000-0000-4000-8000-000000000016', 'Fish harbour approach road flooded', 'flooding', 'Keamari', '[[24.8261,66.9728],[24.8291,66.9768],[24.8321,66.9808]]'::JSONB, true),
+  ('10000000-0000-4000-8000-000000000017', 'Sultanabad main road blocked by fallen wires', 'debris', 'Keamari', '[[24.8343,66.9823],[24.8373,66.9863],[24.8403,66.9903]]'::JSONB, true),
+  ('10000000-0000-4000-8000-000000000018', 'Safoora chowrangi underpass flooded', 'flooding', 'Gulshan-e-Iqbal', '[[24.9292,67.0778],[24.9322,67.0818],[24.9352,67.0858]]'::JSONB, true),
+  ('10000000-0000-4000-8000-000000000019', 'Block 13 road partly collapsed by sinkhole', 'collapse', 'Gulshan-e-Iqbal', '[[24.9185,67.0941],[24.9215,67.0981],[24.9245,67.1021]]'::JSONB, true),
+  ('10000000-0000-4000-8000-000000000020', 'Sector 11 nullah road waterlogged', 'flooding', 'Orangi', '[[24.9363,67.0008],[24.9393,67.0048],[24.9423,67.0088]]'::JSONB, true),
+  ('10000000-0000-4000-8000-000000000021', 'Qasba colony lane 7 blocked by debris', 'debris', 'Orangi', '[[24.9612,66.9728],[24.9642,66.9768],[24.9672,66.9808]]'::JSONB, true),
+  ('10000000-0000-4000-8000-000000000022', 'Burns Road low section flooded', 'flooding', 'Saddar', '[[24.8509,67.0324],[24.8539,67.0364],[24.8569,67.0404]]'::JSONB, true),
+  ('10000000-0000-4000-8000-000000000023', 'Empress Market back lane blocked by stalled cars', 'other', 'Saddar', '[[24.8662,67.0301],[24.8692,67.0341],[24.8722,67.0381]]'::JSONB, false),
+  ('10000000-0000-4000-8000-000000000024', 'Saudabad bridge approach under water', 'flooding', 'Malir', '[[24.8809,67.1862],[24.8839,67.1902],[24.8869,67.1942]]'::JSONB, true),
+  ('10000000-0000-4000-8000-000000000025', 'Malir Halt railway crossing closed, track washed out', 'structural', 'Malir', '[[24.9015,67.2127],[24.9045,67.2167],[24.9075,67.2207]]'::JSONB, true),
+  ('10000000-0000-4000-8000-000000000026', 'Sherpao colony lane 2 flooded and impassable', 'flooding', 'Landhi', '[[24.8456,67.1868],[24.8486,67.1908],[24.8516,67.1948]]'::JSONB, true),
+  ('10000000-0000-4000-8000-000000000027', 'Defence phase 2 service road blocked by fallen tree', 'debris', 'Clifton', '[[24.8128,67.0379],[24.8158,67.0419],[24.8188,67.0459]]'::JSONB, true),
+  ('10000000-0000-4000-8000-000000000028', 'Seaview beach road covered by sand and water', 'flooding', 'Clifton', '[[24.8201,67.023],[24.8231,67.027],[24.8261,67.031]]'::JSONB, true),
+  ('10000000-0000-4000-8000-000000000029', 'Block A road flooded near the graveyard wall', 'flooding', 'North Nazimabad', '[[24.9258,67.0352],[24.9288,67.0392],[24.9318,67.0432]]'::JSONB, true),
+  ('10000000-0000-4000-8000-000000000030', 'Block H underpass flooded, vehicles stuck', 'flooding', 'North Nazimabad', '[[24.9403,67.0378],[24.9433,67.0418],[24.9463,67.0458]]'::JSONB, false);
+
+
+-- -----------------------------------------------------------------------------
+-- 5. Missions (30) and the supplies each one holds (30)
+-- -----------------------------------------------------------------------------
+INSERT INTO dispatches (id, report_id, team_id, assigned_by, assigned_at, status, notes, match_score, distance_km, match_explanation, completed_at, created_at, updated_at) VALUES
+  ('60000000-0000-4000-8000-000000000029', '00000000-0000-4000-8000-000000000001', '20000000-0000-4000-8000-000000000030', NULL, NOW() - INTERVAL '3 minutes', 'cancelled', 'Team diverted to a higher-priority case.', 57, 0.3, '{"breakdown":{},"warnings":[]}'::JSONB, NULL, NOW() - INTERVAL '3 minutes', NOW() - INTERVAL '1 minutes'),
+  ('60000000-0000-4000-8000-000000000030', '00000000-0000-4000-8000-000000000002', '20000000-0000-4000-8000-000000000029', NULL, NOW() - INTERVAL '6 minutes', 'cancelled', 'Boat needed elsewhere, reassigning.', 65, 0.5, '{"breakdown":{},"warnings":[]}'::JSONB, NULL, NOW() - INTERVAL '6 minutes', NOW() - INTERVAL '3 minutes'),
+  ('60000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000015', '20000000-0000-4000-8000-000000000002', NULL, NOW() - INTERVAL '8 minutes', 'pending', 'Access road is partly flooded, approach from the north side.', 62, 0.4, '{"breakdown":{},"warnings":[]}'::JSONB, NULL, NOW() - INTERVAL '8 minutes', NOW() - INTERVAL '6 minutes'),
+  ('60000000-0000-4000-8000-000000000002', '00000000-0000-4000-8000-000000000008', '20000000-0000-4000-8000-000000000005', NULL, NOW() - INTERVAL '13 minutes', 'en_route', NULL, 73, 0.5, '{"breakdown":{},"warnings":[]}'::JSONB, NULL, NOW() - INTERVAL '13 minutes', NOW() - INTERVAL '11 minutes'),
+  ('60000000-0000-4000-8000-000000000005', '00000000-0000-4000-8000-000000000003', '20000000-0000-4000-8000-000000000003', NULL, NOW() - INTERVAL '16 minutes', 'on_scene', NULL, 72, 1.3, '{"breakdown":{},"warnings":[]}'::JSONB, NULL, NOW() - INTERVAL '16 minutes', NOW() - INTERVAL '14 minutes'),
+  ('60000000-0000-4000-8000-000000000003', '00000000-0000-4000-8000-000000000010', '20000000-0000-4000-8000-000000000009', NULL, NOW() - INTERVAL '18 minutes', 'on_scene', NULL, 84, 1, '{"breakdown":{},"warnings":[]}'::JSONB, NULL, NOW() - INTERVAL '18 minutes', NOW() - INTERVAL '16 minutes'),
+  ('60000000-0000-4000-8000-000000000025', '00000000-0000-4000-8000-000000000021', '20000000-0000-4000-8000-000000000021', NULL, NOW() - INTERVAL '20 minutes', 'cancelled', 'Duplicate of another report, team stood down.', 55, 1.3, '{"breakdown":{},"warnings":[]}'::JSONB, NULL, NOW() - INTERVAL '20 minutes', NOW() - INTERVAL '17 minutes'),
+  ('60000000-0000-4000-8000-000000000004', '00000000-0000-4000-8000-000000000012', '20000000-0000-4000-8000-000000000006', NULL, NOW() - INTERVAL '23 minutes', 'en_route', 'Access road is partly flooded, approach from the north side.', 95, 1.3, '{"breakdown":{},"warnings":[]}'::JSONB, NULL, NOW() - INTERVAL '23 minutes', NOW() - INTERVAL '21 minutes'),
+  ('60000000-0000-4000-8000-000000000026', '00000000-0000-4000-8000-000000000022', '20000000-0000-4000-8000-000000000023', NULL, NOW() - INTERVAL '24 minutes', 'cancelled', 'False alarm confirmed by phone, team stood down.', 63, 1, '{"breakdown":{},"warnings":[]}'::JSONB, NULL, NOW() - INTERVAL '24 minutes', NOW() - INTERVAL '21 minutes'),
+  ('60000000-0000-4000-8000-000000000027', '00000000-0000-4000-8000-000000000005', '20000000-0000-4000-8000-000000000020', NULL, NOW() - INTERVAL '28 minutes', 'cancelled', 'Team diverted to a higher-priority case.', 71, 0.2, '{"breakdown":{},"warnings":[]}'::JSONB, NULL, NOW() - INTERVAL '28 minutes', NOW() - INTERVAL '25 minutes'),
+  ('60000000-0000-4000-8000-000000000028', '00000000-0000-4000-8000-000000000006', '20000000-0000-4000-8000-000000000024', NULL, NOW() - INTERVAL '32 minutes', 'cancelled', 'Road blocked on approach, team recalled.', 79, 1.3, '{"breakdown":{},"warnings":[]}'::JSONB, NULL, NOW() - INTERVAL '32 minutes', NOW() - INTERVAL '29 minutes'),
+  ('60000000-0000-4000-8000-000000000006', '00000000-0000-4000-8000-000000000017', '20000000-0000-4000-8000-000000000010', NULL, NOW() - INTERVAL '33 minutes', 'pending', NULL, 83, 3.5, '{"breakdown":{},"warnings":[]}'::JSONB, NULL, NOW() - INTERVAL '33 minutes', NOW() - INTERVAL '31 minutes'),
+  ('60000000-0000-4000-8000-000000000007', '00000000-0000-4000-8000-000000000016', '20000000-0000-4000-8000-000000000001', NULL, NOW() - INTERVAL '38 minutes', 'en_route', 'Access road is partly flooded, approach from the north side.', 94, 5.5, '{"breakdown":{},"warnings":[]}'::JSONB, NULL, NOW() - INTERVAL '38 minutes', NOW() - INTERVAL '36 minutes'),
+  ('60000000-0000-4000-8000-000000000008', '00000000-0000-4000-8000-000000000014', '20000000-0000-4000-8000-000000000013', NULL, NOW() - INTERVAL '43 minutes', 'on_scene', NULL, 71, 23.6, '{"breakdown":{},"warnings":["Long distance: expect a slower arrival"]}'::JSONB, NULL, NOW() - INTERVAL '43 minutes', NOW() - INTERVAL '41 minutes'),
+  ('60000000-0000-4000-8000-000000000009', '00000000-0000-4000-8000-000000000019', '20000000-0000-4000-8000-000000000018', NULL, NOW() - INTERVAL '145 minutes', 'completed', 'Family moved to the nearest shelter.', 58, 0.1, '{"breakdown":{},"warnings":[]}'::JSONB, NOW() - INTERVAL '120 minutes', NOW() - INTERVAL '145 minutes', NOW() - INTERVAL '120 minutes'),
+  ('60000000-0000-4000-8000-000000000010', '00000000-0000-4000-8000-000000000019', '20000000-0000-4000-8000-000000000026', NULL, NOW() - INTERVAL '171 minutes', 'completed', 'First team handed over, second team finished the evacuation.', 60, 0.5, '{"breakdown":{},"warnings":[]}'::JSONB, NOW() - INTERVAL '147 minutes', NOW() - INTERVAL '171 minutes', NOW() - INTERVAL '147 minutes'),
+  ('60000000-0000-4000-8000-000000000011', '00000000-0000-4000-8000-000000000020', '20000000-0000-4000-8000-000000000012', NULL, NOW() - INTERVAL '390 minutes', 'completed', NULL, 65, 2.1, '{"breakdown":{},"warnings":[]}'::JSONB, NOW() - INTERVAL '359 minutes', NOW() - INTERVAL '390 minutes', NOW() - INTERVAL '359 minutes'),
+  ('60000000-0000-4000-8000-000000000012', '00000000-0000-4000-8000-000000000020', '20000000-0000-4000-8000-000000000001', NULL, NOW() - INTERVAL '416 minutes', 'completed', 'First team handed over, second team finished the evacuation.', 69, 3.8, '{"breakdown":{},"warnings":[]}'::JSONB, NOW() - INTERVAL '392 minutes', NOW() - INTERVAL '416 minutes', NOW() - INTERVAL '392 minutes'),
+  ('60000000-0000-4000-8000-000000000013', '00000000-0000-4000-8000-000000000023', '20000000-0000-4000-8000-000000000017', NULL, NOW() - INTERVAL '662 minutes', 'completed', NULL, 72, 3.5, '{"breakdown":{},"warnings":[]}'::JSONB, NOW() - INTERVAL '625 minutes', NOW() - INTERVAL '662 minutes', NOW() - INTERVAL '625 minutes'),
+  ('60000000-0000-4000-8000-000000000014', '00000000-0000-4000-8000-000000000023', '20000000-0000-4000-8000-000000000027', NULL, NOW() - INTERVAL '688 minutes', 'completed', 'First team handed over, second team finished the evacuation.', 78, 4.1, '{"breakdown":{},"warnings":[]}'::JSONB, NOW() - INTERVAL '664 minutes', NOW() - INTERVAL '688 minutes', NOW() - INTERVAL '664 minutes'),
+  ('60000000-0000-4000-8000-000000000017', '00000000-0000-4000-8000-000000000025', '20000000-0000-4000-8000-000000000030', NULL, NOW() - INTERVAL '906 minutes', 'completed', 'Family moved to the nearest shelter.', 86, 2.1, '{"breakdown":{},"warnings":[]}'::JSONB, NOW() - INTERVAL '857 minutes', NOW() - INTERVAL '906 minutes', NOW() - INTERVAL '857 minutes'),
+  ('60000000-0000-4000-8000-000000000018', '00000000-0000-4000-8000-000000000025', '20000000-0000-4000-8000-000000000009', NULL, NOW() - INTERVAL '932 minutes', 'completed', 'First team handed over, second team finished the evacuation.', 66, 2.4, '{"breakdown":{},"warnings":[]}'::JSONB, NOW() - INTERVAL '908 minutes', NOW() - INTERVAL '932 minutes', NOW() - INTERVAL '908 minutes'),
+  ('60000000-0000-4000-8000-000000000015', '00000000-0000-4000-8000-000000000024', '20000000-0000-4000-8000-000000000011', NULL, NOW() - INTERVAL '947 minutes', 'completed', NULL, 79, 1, '{"breakdown":{},"warnings":[]}'::JSONB, NOW() - INTERVAL '904 minutes', NOW() - INTERVAL '947 minutes', NOW() - INTERVAL '904 minutes'),
+  ('60000000-0000-4000-8000-000000000016', '00000000-0000-4000-8000-000000000024', '20000000-0000-4000-8000-000000000017', NULL, NOW() - INTERVAL '973 minutes', 'completed', 'First team handed over, second team finished the evacuation.', 87, 1.8, '{"breakdown":{},"warnings":[]}'::JSONB, NOW() - INTERVAL '949 minutes', NOW() - INTERVAL '973 minutes', NOW() - INTERVAL '949 minutes'),
+  ('60000000-0000-4000-8000-000000000019', '00000000-0000-4000-8000-000000000026', '20000000-0000-4000-8000-000000000028', NULL, NOW() - INTERVAL '1367 minutes', 'completed', NULL, 93, 1.8, '{"breakdown":{},"warnings":[]}'::JSONB, NOW() - INTERVAL '1312 minutes', NOW() - INTERVAL '1367 minutes', NOW() - INTERVAL '1312 minutes'),
+  ('60000000-0000-4000-8000-000000000020', '00000000-0000-4000-8000-000000000026', '20000000-0000-4000-8000-000000000006', NULL, NOW() - INTERVAL '1393 minutes', 'completed', 'First team handed over, second team finished the evacuation.', 75, 2.1, '{"breakdown":{},"warnings":[]}'::JSONB, NOW() - INTERVAL '1369 minutes', NOW() - INTERVAL '1393 minutes', NOW() - INTERVAL '1369 minutes'),
+  ('60000000-0000-4000-8000-000000000021', '00000000-0000-4000-8000-000000000027', '20000000-0000-4000-8000-000000000007', NULL, NOW() - INTERVAL '1514 minutes', 'completed', NULL, 62, 1.1, '{"breakdown":{},"warnings":[]}'::JSONB, NOW() - INTERVAL '1453 minutes', NOW() - INTERVAL '1514 minutes', NOW() - INTERVAL '1453 minutes'),
+  ('60000000-0000-4000-8000-000000000022', '00000000-0000-4000-8000-000000000028', '20000000-0000-4000-8000-000000000027', NULL, NOW() - INTERVAL '2050 minutes', 'completed', NULL, 69, 2.1, '{"breakdown":{},"warnings":[]}'::JSONB, NOW() - INTERVAL '2025 minutes', NOW() - INTERVAL '2050 minutes', NOW() - INTERVAL '2025 minutes'),
+  ('60000000-0000-4000-8000-000000000023', '00000000-0000-4000-8000-000000000029', '20000000-0000-4000-8000-000000000012', NULL, NOW() - INTERVAL '2196 minutes', 'completed', 'Family moved to the nearest shelter.', 76, 4, '{"breakdown":{},"warnings":[]}'::JSONB, NOW() - INTERVAL '2165 minutes', NOW() - INTERVAL '2196 minutes', NOW() - INTERVAL '2165 minutes'),
+  ('60000000-0000-4000-8000-000000000024', '00000000-0000-4000-8000-000000000030', '20000000-0000-4000-8000-000000000015', NULL, NOW() - INTERVAL '2453 minutes', 'completed', NULL, 83, 1.8, '{"breakdown":{},"warnings":[]}'::JSONB, NOW() - INTERVAL '2416 minutes', NOW() - INTERVAL '2453 minutes', NOW() - INTERVAL '2416 minutes');
+
+INSERT INTO dispatch_resources (id, dispatch_id, resource_id, quantity) VALUES
+  ('70000000-0000-4000-8000-000000000001', '60000000-0000-4000-8000-000000000001', '40000000-0000-4000-8000-000000000002', 1),
+  ('70000000-0000-4000-8000-000000000002', '60000000-0000-4000-8000-000000000002', '40000000-0000-4000-8000-000000000008', 1),
+  ('70000000-0000-4000-8000-000000000003', '60000000-0000-4000-8000-000000000003', '40000000-0000-4000-8000-000000000016', 1),
+  ('70000000-0000-4000-8000-000000000004', '60000000-0000-4000-8000-000000000004', '40000000-0000-4000-8000-000000000009', 1),
+  ('70000000-0000-4000-8000-000000000005', '60000000-0000-4000-8000-000000000005', '40000000-0000-4000-8000-000000000003', 1),
+  ('70000000-0000-4000-8000-000000000006', '60000000-0000-4000-8000-000000000006', '40000000-0000-4000-8000-000000000017', 1),
+  ('70000000-0000-4000-8000-000000000007', '60000000-0000-4000-8000-000000000007', '40000000-0000-4000-8000-000000000001', 1),
+  ('70000000-0000-4000-8000-000000000008', '60000000-0000-4000-8000-000000000008', '40000000-0000-4000-8000-000000000020', 1),
+  ('70000000-0000-4000-8000-000000000009', '60000000-0000-4000-8000-000000000001', '40000000-0000-4000-8000-000000000029', 6),
+  ('70000000-0000-4000-8000-000000000010', '60000000-0000-4000-8000-000000000002', '40000000-0000-4000-8000-000000000026', 3),
+  ('70000000-0000-4000-8000-000000000011', '60000000-0000-4000-8000-000000000009', '40000000-0000-4000-8000-000000000006', 1),
+  ('70000000-0000-4000-8000-000000000012', '60000000-0000-4000-8000-000000000012', '40000000-0000-4000-8000-000000000001', 1),
+  ('70000000-0000-4000-8000-000000000013', '60000000-0000-4000-8000-000000000011', '40000000-0000-4000-8000-000000000019', 1),
+  ('70000000-0000-4000-8000-000000000014', '60000000-0000-4000-8000-000000000013', '40000000-0000-4000-8000-000000000005', 1),
+  ('70000000-0000-4000-8000-000000000015', '60000000-0000-4000-8000-000000000016', '40000000-0000-4000-8000-000000000005', 1),
+  ('70000000-0000-4000-8000-000000000016', '60000000-0000-4000-8000-000000000015', '40000000-0000-4000-8000-000000000018', 1),
+  ('70000000-0000-4000-8000-000000000017', '60000000-0000-4000-8000-000000000018', '40000000-0000-4000-8000-000000000016', 1),
+  ('70000000-0000-4000-8000-000000000018', '60000000-0000-4000-8000-000000000020', '40000000-0000-4000-8000-000000000009', 1),
+  ('70000000-0000-4000-8000-000000000019', '60000000-0000-4000-8000-000000000021', '40000000-0000-4000-8000-000000000010', 1),
+  ('70000000-0000-4000-8000-000000000020', '60000000-0000-4000-8000-000000000023', '40000000-0000-4000-8000-000000000019', 1),
+  ('70000000-0000-4000-8000-000000000021', '60000000-0000-4000-8000-000000000010', '40000000-0000-4000-8000-000000000024', 2),
+  ('70000000-0000-4000-8000-000000000022', '60000000-0000-4000-8000-000000000009', '40000000-0000-4000-8000-000000000024', 2),
+  ('70000000-0000-4000-8000-000000000023', '60000000-0000-4000-8000-000000000012', '40000000-0000-4000-8000-000000000024', 2),
+  ('70000000-0000-4000-8000-000000000024', '60000000-0000-4000-8000-000000000011', '40000000-0000-4000-8000-000000000024', 2),
+  ('70000000-0000-4000-8000-000000000025', '60000000-0000-4000-8000-000000000014', '40000000-0000-4000-8000-000000000024', 2),
+  ('70000000-0000-4000-8000-000000000026', '60000000-0000-4000-8000-000000000013', '40000000-0000-4000-8000-000000000024', 2),
+  ('70000000-0000-4000-8000-000000000027', '60000000-0000-4000-8000-000000000016', '40000000-0000-4000-8000-000000000024', 2),
+  ('70000000-0000-4000-8000-000000000028', '60000000-0000-4000-8000-000000000015', '40000000-0000-4000-8000-000000000024', 2),
+  ('70000000-0000-4000-8000-000000000029', '60000000-0000-4000-8000-000000000018', '40000000-0000-4000-8000-000000000024', 2),
+  ('70000000-0000-4000-8000-000000000030', '60000000-0000-4000-8000-000000000017', '40000000-0000-4000-8000-000000000024', 2);
+
+
+-- -----------------------------------------------------------------------------
+-- 6. Check: every line below should say 30 (report_events is derived)
+-- -----------------------------------------------------------------------------
+SELECT 'profiles (demo accounts)' AS item, COUNT(*) AS rows FROM profiles WHERE email LIKE '%@demo.vyra'
+UNION ALL SELECT 'auth users (demo accounts)', COUNT(*) FROM auth.users WHERE email LIKE '%@demo.vyra'
+UNION ALL SELECT 'emergency_reports', COUNT(*) FROM emergency_reports WHERE client_id LIKE 'demo-seed-%'
+UNION ALL SELECT 'report_events', COUNT(*) FROM report_events WHERE actor IN ('seed', 'Dispatcher (demo)')
+UNION ALL SELECT 'rescue_teams', COUNT(*) FROM rescue_teams WHERE id::TEXT LIKE '20000000-%'
+UNION ALL SELECT 'resources', COUNT(*) FROM resources WHERE id::TEXT LIKE '40000000-%'
+UNION ALL SELECT 'shelters', COUNT(*) FROM shelters WHERE id::TEXT LIKE '30000000-%'
+UNION ALL SELECT 'route_hazards', COUNT(*) FROM route_hazards WHERE id::TEXT LIKE '50000000-%'
+UNION ALL SELECT 'blocked_roads', COUNT(*) FROM blocked_roads WHERE id::TEXT LIKE '10000000-%'
+UNION ALL SELECT 'dispatches', COUNT(*) FROM dispatches WHERE id::TEXT LIKE '60000000-%'
+UNION ALL SELECT 'dispatch_resources', COUNT(*) FROM dispatch_resources WHERE id::TEXT LIKE '70000000-%';
+
+NOTIFY pgrst, 'reload schema';

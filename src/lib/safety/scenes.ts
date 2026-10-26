@@ -1,0 +1,36 @@
+// Illustration ids and their accessible descriptions. The drawings live in components/safety/Scene.tsx;
+// this file has no React so tests can check that every step points to a real, described illustration.
+export const SCENES = {
+  highground: 'A person standing on higher ground above rising water, with an arrow pointing up and away from the water.',
+  nowade: 'A person at the edge of flood water with a cross over wading feet. Walking through floodwater is marked as not allowed.',
+  floodcar: 'A car stopped in rising water with a cross over it. Driving through floodwater is marked as not allowed.',
+  dropcover: 'A person crouched under a sturdy table, one arm covering the head and neck, one hand holding the table leg.',
+  exitdoor: 'A person walking to an exit door with an arrow. A crossed-out elevator sign shows the stairs must be used.',
+  crawlsmoke: 'A person crawling low under a layer of smoke toward a door.',
+  kit: 'An emergency kit: a bag with a water bottle, torch, first-aid cross, documents and medicines.',
+  phone: 'A phone showing a location pin and a battery symbol, for sharing your location with rescuers.',
+  route: 'A map showing a route with arrows from a home to a marked shelter.',
+  shelter: 'A building with a plus sign and several people waiting safely inside.',
+  tap: 'A person trapped under rubble tapping a pipe, with sound waves, and a whistle beside them.',
+  dustmask: 'A person covering their nose and mouth with a cloth to keep out dust.',
+  wire: 'A fallen power line on the ground with a wide danger circle around it and a person standing far outside the circle.',
+  storm: 'A house in strong wind and rain. A person sits in an inner room away from the windows.',
+  slope: 'A hillside with earth sliding down and a person moving sideways, away from the path of the slide, toward stable ground.',
+  sun: 'A hot sun above a person resting in shade and drinking water.',
+  wave: 'A large sea wave approaching a coast, with a person moving inland and uphill away from the shore.',
+  chemcloud: 'A leaking container releasing a cloud, with a person moving away from it, away from the cloud.',
+  sealroom: 'A room with windows and doors closed and a fan switched off, with people inside.',
+  roadside: 'A car pulled to the side of the road with hazard lights on, and people standing safely behind a barrier away from traffic.',
+  firstaid: 'Hands pressing a clean cloth firmly on a wound, with a first-aid cross.',
+  listen: 'A phone and a radio showing an official alert, with a loudspeaker symbol.',
+  checkhome: 'A cracked house with a stop sign and tape across the door: do not enter until it is declared safe.',
+  signal: 'A person at an upper window waving a bright cloth, with a phone torch, in a way that is safe from the water below.',
+  family: 'An adult, a child and an older person standing together and holding hands.',
+  cleanup: 'Boots, gloves and a water bottle, for safe clean-up after a flood.',
+  gasleak: 'A kitchen stove with a gas smell symbol, an arrow out of the building, and a crossed-out light switch.',
+  stopdrop: 'A person on the ground rolling with arms over their face to put out flames on their clothes.',
+  keepback: 'A bystander standing well back from a collapsed building with a stop hand, letting rescue workers go in.',
+  checkon: 'A person checking on an older neighbour at a door, bringing water.',
+} as const
+export type SceneId = keyof typeof SCENES
+export const SCENE_IDS = Object.keys(SCENES) as SceneId[]

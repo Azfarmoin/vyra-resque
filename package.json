@@ -1,0 +1,115 @@
+{
+<<<<<<< HEAD
+  "name": "vyra",
+  "version": "0.1.0",
+  "private": true,
+  "description": "VYRA - explainable, resource-aware disaster response platform",
+  "engines": {
+    "node": ">=18.17.0"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "dev:demo": "cross-env VYRA_DATA_MODE=demo next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "tsx --test tests/triage.test.ts tests/api.test.ts tests/ops.test.ts tests/admin.test.ts tests/routing.test.ts tests/hazards.test.ts tests/support.test.ts tests/alerts.test.ts tests/alertsClient.test.ts tests/offline.test.ts tests/attachments.test.ts tests/zones.logic.test.ts tests/zones.api.test.ts tests/zones.evidence.test.ts tests/satellite.analysis.test.ts tests/satellite.validation.test.ts tests/satellite.providers.test.ts tests/satellite.api.test.ts tests/satellite.safety.test.ts tests/photoAnalysis.logic.test.ts tests/photoAnalysis.api.test.ts tests/photoAnalysis.offline.test.ts tests/aiProvider.test.ts tests/flood.engine.test.ts tests/flood.api.test.ts tests/safety.test.ts tests/openAccess.test.ts tests/delivery.test.ts tests/gateway.test.ts tests/shelters.engine.test.ts tests/shelters.service.test.ts tests/shelters.coverage.test.ts tests/shelters.handlers.test.ts tests/shelters.security.test.ts",
+    "test:satellite": "tsx --test tests/satellite.analysis.test.ts tests/satellite.validation.test.ts tests/satellite.providers.test.ts tests/satellite.api.test.ts tests/satellite.safety.test.ts",
+    "test:satellite-rls": "node scripts/test-satellite-rls.mjs",
+    "test:live": "tsx --test tests/live.integration.test.ts",
+    "test:rls": "node scripts/test-support-rls.mjs",
+    "db:setup": "node scripts/setup-db.js",
+    "db:seed": "node scripts/setup-db.js --seed-only",
+    "db:seed:generate": "tsx scripts/generate-seed-30.mts",
+    "db:seed:generate:80": "tsx scripts/generate-seed-sql.ts",
+    "vapid:generate": "npx web-push generate-vapid-keys",
+    "test:rls:photo": "node scripts/test-photo-analysis-rls.mjs",
+    "test:rls:hardening": "node scripts/test-rls-hardening.mjs",
+    "dev:open": "cross-env VYRA_DATA_MODE=demo NEXT_PUBLIC_VYRA_OPEN_ACCESS=true VYRA_DISABLE_RATE_LIMITS=true next dev",
+    "test:rls:safety": "node scripts/test-safety-rls.mjs",
+    "db:seed:generate:large": "tsx scripts/generate-seed-large.mts",
+    "test:seed:large": "node scripts/test-large-seed.mjs",
+    "dev:demo:large": "cross-env VYRA_DATA_MODE=demo NEXT_PUBLIC_VYRA_OPEN_ACCESS=true VYRA_DISABLE_RATE_LIMITS=true VYRA_DEMO_DATASET=large next dev",
+    "test:shelters": "tsx --test tests/shelters.engine.test.ts tests/shelters.service.test.ts tests/shelters.coverage.test.ts tests/shelters.handlers.test.ts tests/shelters.security.test.ts",
+    "test:shelters-sql": "node scripts/test-shelter-sql.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.43.4",
+    "geotiff": "^3.0.5",
+    "idb": "^8.0.4",
+    "leaflet": "^1.9.4",
+    "next": "14.2.5",
+    "pdfkit": "^0.15.2",
+    "proj4": "^2.22.0",
+    "qrcode": "^1.5.4",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-leaflet": "^4.2.1",
+    "web-push": "^3.6.7",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.11",
+    "@types/leaflet": "^1.9.12",
+    "@types/node": "^20.12.12",
+    "@types/pdfkit": "^0.17.7",
+    "@types/proj4": "^2.5.6",
+    "@types/qrcode": "^1.5.6",
+    "@types/react": "^18.3.2",
+    "@types/react-dom": "^18.3.0",
+    "@types/web-push": "^3.6.3",
+=======
+  "name": "resqnet",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "tsx --test tests/triage.test.ts tests/api.test.ts",
+    "dev:demo": "cross-env VYRA_DATA_MODE=demo next dev"
+  },
+  "dependencies": {
+    "@supabase/auth-helpers-nextjs": "^0.10.0",
+    "@supabase/supabase-js": "^2.43.4",
+    "clsx": "^2.1.1",
+    "leaflet": "^1.9.4",
+    "lucide-react": "^0.379.0",
+    "next": "14.2.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-leaflet": "^4.2.1",
+    "tailwind-merge": "^2.3.0",
+    "zod": "^3.24.1"
+    "tailwind-merge": "^2.3.0"
+  },
+  "devDependencies": {
+    "@types/leaflet": "^1.9.12",
+    "@types/node": "^20.12.12",
+    "@types/react": "^18.3.2",
+    "@types/react-dom": "^18.3.0",
+>>>>>>> a060b8ffeee783089b8a5367755aa94cb1169895
+    "autoprefixer": "^10.4.19",
+    "cross-env": "^7.0.3",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "14.2.5",
+<<<<<<< HEAD
+    "fake-indexeddb": "^6.2.6",
+    "pg": "^8.23.1",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.3",
+    "tsx": "^4.19.2",
+=======
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.3",
+    "tsx": "^4.19.2",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "14.2.5",
+    "postcss": "^8.4.38",
+    "supabase": "^2.121.0",
+    "tailwindcss": "^3.4.3",
+>>>>>>> a060b8ffeee783089b8a5367755aa94cb1169895
+    "typescript": "^5.4.5"
+  }
+}
